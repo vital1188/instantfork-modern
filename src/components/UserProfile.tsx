@@ -200,7 +200,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({ isOpen, onClose }) => 
               </div>
             ) : favoriteDeals.length > 0 ? (
               <div className="space-y-3">
-                {favoriteDeals.map((deal) => (
+                {favoriteDeals.map((deal: any) => (
                   <div key={deal.id} className="p-4 glass rounded-2xl hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
                     <div className="flex items-start justify-between">
                       <div className="flex-1">

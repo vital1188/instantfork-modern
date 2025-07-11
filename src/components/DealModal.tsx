@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, Clock, MapPin, Tag, Share2, Heart, Navigation, Phone, Globe } from 'lucide-react';
+import { X, Clock, MapPin, Share2, Heart, Navigation, Phone, Globe } from 'lucide-react';
 import { Deal } from '../types';
 import { formatPrice, calculateSavings, getTimeRemaining, calculateDistance } from '../utils/helpers';
 import { useStore } from '../store/useStore';

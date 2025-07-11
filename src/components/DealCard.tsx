@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Clock, MapPin, Tag, Heart, Star, TrendingUp, Users } from 'lucide-react';
+import { Clock, MapPin, Tag, Heart, Star, TrendingUp } from 'lucide-react';
 import { Deal } from '../types';
 import { formatPrice, calculateSavings, getTimeRemaining, calculateDistance } from '../utils/helpers';
 import { useStore } from '../store/useStore';

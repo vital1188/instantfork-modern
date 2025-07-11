@@ -46,7 +46,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     initializeAuth();
 
     // Listen for changes on auth state (sign in, sign out, etc.)
-    const { data: authListener } = supabase.auth.onAuthStateChange(async (event: any, session: any) => {
+    const { data: authListener } = supabase.auth.onAuthStateChange(async (_event, session) => {
       setUser(session?.user ?? null);
       
       // Update user in store when auth state changes

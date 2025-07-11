@@ -1,4 +1,4 @@
-import { differenceInHours, differenceInMinutes, format } from 'date-fns';
+import { differenceInHours, differenceInMinutes } from 'date-fns';
 
 export function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
   const R = 3959; // Radius of the Earth in miles

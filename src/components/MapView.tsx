@@ -1,5 +1,5 @@
-import React, { useEffect, useState, useCallback, useRef } from 'react';
-import { GoogleMap, LoadScript, Marker, InfoWindow, Circle, useLoadScript } from '@react-google-maps/api';
+import React, { useEffect, useState, useCallback } from 'react';
+import { GoogleMap, Marker, InfoWindow, Circle, useLoadScript } from '@react-google-maps/api';
 import { Deal } from '../types';
 import { useStore } from '../store/useStore';
 import { formatPrice, calculateSavings, calculateDistance } from '../utils/helpers';
@@ -175,10 +175,6 @@ export const MapView: React.FC<MapViewProps> = ({ deals }) => {
 
       {/* Deal markers */}
       {deals.map((deal) => {
-        const distance = userLocation 
-          ? calculateDistance(userLocation.lat, userLocation.lng, deal.location.lat, deal.location.lng)
-          : null;
-
         return (
           <Marker
             key={deal.id}

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Header } from './components/Header';
 import { DealCard } from './components/DealCard';
 import { MapView } from './components/MapView';
@@ -216,9 +216,9 @@ function App() {
               <button
                 onClick={() => setViewMode('map')}
                 className={`p-2.5 rounded-xl transition-all duration-200 ${
-                  viewMode === 'map' 
-                    ? 'gradient-primary text-white shadow-lg' 
-                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100'
+                  viewMode === 'list' 
+                    ? 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100'
+                    : 'gradient-primary text-white shadow-lg'
                 }`}
               >
                 <Map className="w-5 h-5" />
