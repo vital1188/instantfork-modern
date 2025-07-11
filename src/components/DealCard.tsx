@@ -26,6 +26,8 @@ export const DealCard: React.FC<DealCardProps> = ({ deal, onClick }) => {
   useEffect(() => {
     if (user) {
       checkIfFavorite();
+    } else {
+      setIsFavorite(false);
     }
   }, [user, deal.id]);
 
@@ -34,7 +36,7 @@ export const DealCard: React.FC<DealCardProps> = ({ deal, onClick }) => {
     
     const { data } = await getUserFavorites(user.id);
     if (data) {
-      setIsFavorite(data.some(fav => fav.deal_id === deal.id));
+      setIsFavorite(data.some((fav: any) => fav.deal_id === deal.id));
     }
   };
 

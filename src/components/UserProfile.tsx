@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { User, Settings, Heart, LogOut, ChevronRight, Star } from 'lucide-react';
-import { useStore } from '../store/useStore';
+import { User, Settings, Heart, LogOut, ChevronRight, Star, Clock, MapPin } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { getUserProfile, getUserDealHistory, getUserFavorites } from '../lib/supabase';
+import { mockDeals } from '../utils/mockData';
+import { formatPrice, calculateSavings, getTimeRemaining } from '../utils/helpers';
 
 interface UserProfileProps {
   isOpen: boolean;
@@ -16,6 +17,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({ isOpen, onClose }) => 
   const [profile, setProfile] = useState<any>(null);
   const [dealHistory, setDealHistory] = useState<any[]>([]);
   const [favorites, setFavorites] = useState<any[]>([]);
+  const [favoriteDeals, setFavoriteDeals] = useState<any[]>([]);
 
   useEffect(() => {
     if (authUser && isOpen) {
@@ -39,6 +41,16 @@ export const UserProfile: React.FC<UserProfileProps> = ({ isOpen, onClose }) => 
       // Load favorites
       const { data: favoritesData } = await getUserFavorites(authUser.id);
       setFavorites(favoritesData || []);
+      
+      // Map favorite deal IDs to actual deal data
+      if (favoritesData && favoritesData.length > 0) {
+        const favDeals = favoritesData
+          .map(fav => mockDeals.find(deal => deal.id === fav.deal_id))
+          .filter(Boolean);
+        setFavoriteDeals(favDeals);
+      } else {
+        setFavoriteDeals([]);
+      }
     } catch (error) {
       console.error('Error loading user data:', error);
     } finally {
@@ -186,11 +198,37 @@ export const UserProfile: React.FC<UserProfileProps> = ({ isOpen, onClose }) => 
               <div className="text-center py-8">
                 <div className="w-8 h-8 border-2 border-rose-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
               </div>
-            ) : favorites.length > 0 ? (
+            ) : favoriteDeals.length > 0 ? (
               <div className="space-y-3">
-                {favorites.map((fav) => (
-                  <div key={fav.deal_id} className="p-4 glass rounded-2xl">
-                    <p className="font-medium">Deal #{fav.deal_id}</p>
+                {favoriteDeals.map((deal) => (
+                  <div key={deal.id} className="p-4 glass rounded-2xl hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <h4 className="font-semibold text-gray-900 dark:text-gray-100">{deal.title}</h4>
+                        <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{deal.restaurant.name}</p>
+                        
+                        <div className="flex items-center gap-3 mt-2">
+                          <div className="flex items-center space-x-1 text-xs">
+                            <Clock className="w-3 h-3 text-rose-500" />
+                            <span className="text-gray-600 dark:text-gray-400">{getTimeRemaining(deal.end_time)}</span>
+                          </div>
+                          <div className="flex items-center space-x-1 text-xs">
+                            <MapPin className="w-3 h-3 text-blue-500" />
+                            <span className="text-gray-600 dark:text-gray-400">{deal.restaurant.cuisine}</span>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="text-right ml-4">
+                        <div className="flex items-baseline space-x-2">
+                          <span className="text-xl font-bold text-gradient">{formatPrice(deal.deal_price)}</span>
+                          <span className="text-xs text-gray-500 line-through">{formatPrice(deal.original_price)}</span>
+                        </div>
+                        <p className="text-xs text-green-600 dark:text-green-400 font-medium mt-1">
+                          {calculateSavings(deal.original_price, deal.deal_price)}% OFF
+                        </p>
+                      </div>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -209,18 +247,33 @@ export const UserProfile: React.FC<UserProfileProps> = ({ isOpen, onClose }) => 
               </div>
             ) : dealHistory.length > 0 ? (
               <div className="space-y-3">
-                {dealHistory.map((item) => (
-                  <div key={item.id} className="p-4 glass rounded-2xl">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <h4 className="font-semibold text-gray-900 dark:text-gray-100">Deal #{item.deal_id}</h4>
-                        <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
-                          {new Date(item.redeemed_at).toLocaleDateString()}
-                        </p>
+                {dealHistory.map((item) => {
+                  const deal = mockDeals.find(d => d.id === item.deal_id);
+                  return (
+                    <div key={item.id} className="p-4 glass rounded-2xl">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <h4 className="font-semibold text-gray-900 dark:text-gray-100">
+                            {deal ? deal.title : `Deal #${item.deal_id}`}
+                          </h4>
+                          {deal && (
+                            <p className="text-sm text-gray-600 dark:text-gray-400">{deal.restaurant.name}</p>
+                          )}
+                          <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
+                            Redeemed on {new Date(item.redeemed_at).toLocaleDateString()}
+                          </p>
+                        </div>
+                        {deal && (
+                          <div className="text-right">
+                            <p className="font-semibold text-green-600 dark:text-green-400">
+                              Saved {formatPrice(deal.original_price - deal.deal_price)}
+                            </p>
+                          </div>
+                        )}
                       </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             ) : (
               <div className="text-center py-8">
