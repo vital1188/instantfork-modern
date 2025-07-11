@@ -103,7 +103,7 @@ export const LocationModal: React.FC<LocationModalProps> = ({ isOpen, onClose })
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-300">
-      <div className="bg-white dark:bg-gray-900 rounded-3xl max-w-md w-full shadow-2xl animate-in slide-in-from-bottom-4 duration-500">
+      <div className="bg-white dark:bg-gray-900 rounded-3xl max-w-md w-full shadow-2xl animate-in slide-in-from-bottom-4 duration-500 mx-auto">
         {/* Header */}
         <div className="p-6 border-b border-gray-200 dark:border-gray-800">
           <div className="flex justify-between items-center">
