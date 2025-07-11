@@ -29,14 +29,28 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
       if (isSignUp) {
         const { error } = await signUp(formData.email, formData.password, formData.fullName);
         if (error) {
-          setError(error.message);
+          if (error.message.includes('not configured')) {
+            setError(error.message);
+          } else {
+            setError('Failed to create account. Please check your details and try again.');
+          }
         } else {
-          onClose();
+          setError('Account created successfully! Please check your email to confirm your account.');
+          setTimeout(() => {
+            setIsSignUp(false);
+            setError(null);
+          }, 3000);
         }
       } else {
         const { error } = await signIn(formData.email, formData.password);
         if (error) {
-          setError(error.message);
+          if (error.message.includes('not configured')) {
+            setError(error.message);
+          } else if (error.message.includes('Invalid login credentials')) {
+            setError('Invalid email or password. Please try again.');
+          } else {
+            setError('Failed to sign in. Please try again.');
+          }
         } else {
           onClose();
         }
@@ -59,7 +73,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-300">
-      <div className="bg-white dark:bg-gray-900 rounded-3xl max-w-md w-full overflow-hidden shadow-2xl animate-in slide-in-from-bottom-4 duration-500 mx-auto">
+      <div className="bg-white dark:bg-gray-900 rounded-3xl max-w-md w-full overflow-hidden shadow-2xl animate-in slide-in-from-bottom-4 duration-500 mx-auto my-auto">
         {/* Header */}
         <div className="relative p-6 pb-0">
           <div className="flex justify-between items-start mb-6">
@@ -151,8 +165,16 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
           </div>
 
           {error && (
-            <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl">
-              <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+            <div className={`p-3 rounded-xl border ${
+              error.includes('successfully') 
+                ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800' 
+                : 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800'
+            }`}>
+              <p className={`text-sm ${
+                error.includes('successfully') 
+                  ? 'text-green-600 dark:text-green-400' 
+                  : 'text-red-600 dark:text-red-400'
+              }`}>{error}</p>
             </div>
           )}
 

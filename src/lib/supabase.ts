@@ -1,13 +1,28 @@
 import { createClient } from '@supabase/supabase-js';
 
 // These should be in environment variables for production
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://your-project.supabase.co';
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'your-anon-key';
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+// Check if Supabase is configured
+export const isSupabaseConfigured = !!(supabaseUrl && supabaseAnonKey && 
+  supabaseUrl !== 'https://your-project.supabase.co' && 
+  supabaseAnonKey !== 'your-anon-key');
+
+// Create client only if configured
+export const supabase = (supabaseUrl && supabaseAnonKey) 
+  ? createClient(supabaseUrl, supabaseAnonKey)
+  : null as any;
 
 // Auth helper functions
 export const signUp = async (email: string, password: string, fullName: string) => {
+  if (!isSupabaseConfigured) {
+    return { 
+      data: null, 
+      error: new Error('Supabase is not configured. Please follow the setup instructions in SUPABASE_SETUP.md') 
+    };
+  }
+  
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
@@ -21,6 +36,13 @@ export const signUp = async (email: string, password: string, fullName: string) 
 };
 
 export const signIn = async (email: string, password: string) => {
+  if (!isSupabaseConfigured) {
+    return { 
+      data: null, 
+      error: new Error('Supabase is not configured. Please follow the setup instructions in SUPABASE_SETUP.md') 
+    };
+  }
+  
   const { data, error } = await supabase.auth.signInWithPassword({
     email,
     password,
@@ -29,16 +51,25 @@ export const signIn = async (email: string, password: string) => {
 };
 
 export const signOut = async () => {
+  if (!isSupabaseConfigured) {
+    return { error: null };
+  }
   const { error } = await supabase.auth.signOut();
   return { error };
 };
 
 export const getCurrentUser = async () => {
+  if (!isSupabaseConfigured) {
+    return null;
+  }
   const { data: { user } } = await supabase.auth.getUser();
   return user;
 };
 
 export const updateProfile = async (userId: string, updates: any) => {
+  if (!isSupabaseConfigured) {
+    return { data: null, error: new Error('Supabase not configured') };
+  }
   const { data, error } = await supabase
     .from('profiles')
     .update(updates)
@@ -47,6 +78,9 @@ export const updateProfile = async (userId: string, updates: any) => {
 };
 
 export const getUserProfile = async (userId: string) => {
+  if (!isSupabaseConfigured) {
+    return { data: null, error: new Error('Supabase not configured') };
+  }
   const { data, error } = await supabase
     .from('profiles')
     .select('*')
@@ -57,6 +91,9 @@ export const getUserProfile = async (userId: string) => {
 
 // Favorites functions
 export const addFavorite = async (userId: string, dealId: string) => {
+  if (!isSupabaseConfigured) {
+    return { data: null, error: new Error('Supabase not configured') };
+  }
   const { data, error } = await supabase
     .from('favorites')
     .insert({ user_id: userId, deal_id: dealId });
@@ -64,6 +101,9 @@ export const addFavorite = async (userId: string, dealId: string) => {
 };
 
 export const removeFavorite = async (userId: string, dealId: string) => {
+  if (!isSupabaseConfigured) {
+    return { error: new Error('Supabase not configured') };
+  }
   const { error } = await supabase
     .from('favorites')
     .delete()
@@ -73,6 +113,9 @@ export const removeFavorite = async (userId: string, dealId: string) => {
 };
 
 export const getUserFavorites = async (userId: string) => {
+  if (!isSupabaseConfigured) {
+    return { data: [], error: null };
+  }
   const { data, error } = await supabase
     .from('favorites')
     .select('deal_id')
@@ -82,6 +125,9 @@ export const getUserFavorites = async (userId: string) => {
 
 // Deal history functions
 export const addDealToHistory = async (userId: string, dealId: string) => {
+  if (!isSupabaseConfigured) {
+    return { data: null, error: new Error('Supabase not configured') };
+  }
   const { data, error } = await supabase
     .from('deal_history')
     .insert({ 
@@ -93,6 +139,9 @@ export const addDealToHistory = async (userId: string, dealId: string) => {
 };
 
 export const getUserDealHistory = async (userId: string) => {
+  if (!isSupabaseConfigured) {
+    return { data: [], error: null };
+  }
   const { data, error } = await supabase
     .from('deal_history')
     .select('*')

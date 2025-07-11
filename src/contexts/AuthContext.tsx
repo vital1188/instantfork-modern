@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User } from '@supabase/supabase-js';
-import { supabase, getCurrentUser, signIn, signUp, signOut } from '../lib/supabase';
+import { supabase, getCurrentUser, signIn, signUp, signOut, isSupabaseConfigured } from '../lib/supabase';
 
 interface AuthContextType {
   user: User | null;
@@ -25,6 +25,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // If Supabase is not configured, skip auth initialization
+    if (!isSupabaseConfigured) {
+      setLoading(false);
+      return;
+    }
+
     // Check active sessions and sets the user
     const initializeAuth = async () => {
       try {
@@ -40,7 +46,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     initializeAuth();
 
     // Listen for changes on auth state (sign in, sign out, etc.)
-    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
+    const { data: authListener } = supabase.auth.onAuthStateChange(async (event: any, session: any) => {
       setUser(session?.user ?? null);
       
       // Update user in store when auth state changes
