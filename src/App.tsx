@@ -5,7 +5,9 @@ import { MapView } from './components/MapView';
 import { FilterPanel } from './components/FilterPanel';
 import { DealModal } from './components/DealModal';
 import { HungryNowButton } from './components/HungryNowButton';
-import { Filter, Grid3X3, Map, Sparkles } from 'lucide-react';
+import { SearchBar } from './components/SearchBar';
+import { FeaturedDeals } from './components/FeaturedDeals';
+import { Filter, Grid3X3, Map, Sparkles, Pizza, Coffee, Utensils, Wine, Sandwich, IceCream } from 'lucide-react';
 import { useStore } from './store/useStore';
 import { mockDeals } from './utils/mockData';
 import { calculateDistance } from './utils/helpers';
@@ -155,6 +157,35 @@ function App() {
       <Header />
       
       <main className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        {/* Search Bar */}
+        <SearchBar />
+
+        {/* Featured Deals Carousel */}
+        <FeaturedDeals deals={filteredDeals} onDealClick={setSelectedDeal} />
+
+        {/* Categories */}
+        <div className="mb-8">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Browse by Category</h3>
+          <div className="grid grid-cols-3 sm:grid-cols-6 gap-4">
+            {[
+              { icon: Pizza, name: 'Pizza', color: 'text-orange-500' },
+              { icon: Coffee, name: 'Coffee', color: 'text-brown-600' },
+              { icon: Utensils, name: 'Dining', color: 'text-blue-500' },
+              { icon: Wine, name: 'Drinks', color: 'text-purple-500' },
+              { icon: Sandwich, name: 'Fast Food', color: 'text-green-500' },
+              { icon: IceCream, name: 'Desserts', color: 'text-pink-500' },
+            ].map((category) => (
+              <button
+                key={category.name}
+                className="flex flex-col items-center p-4 glass rounded-2xl hover:bg-white/80 dark:hover:bg-gray-800/80 transition-all duration-200 group"
+              >
+                <category.icon className={`w-8 h-8 ${category.color} group-hover:scale-110 transition-transform duration-200`} />
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300 mt-2">{category.name}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
         {/* Location Error Alert */}
         {locationError && (
           <div className="mb-4 p-4 glass rounded-2xl border-yellow-500/20 bg-yellow-50/50 dark:bg-yellow-900/20">

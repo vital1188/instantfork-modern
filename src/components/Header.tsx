@@ -2,12 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { MapPin, Bell, User, Menu, X, Sparkles, Moon, Sun } from 'lucide-react';
 import { useStore } from '../store/useStore';
 import { LocationModal } from './LocationModal';
+import { UserProfile } from './UserProfile';
+import { NotificationsPanel } from './NotificationsPanel';
 
 export const Header: React.FC = () => {
   const { viewMode, setViewMode, userLocation } = useStore();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
+  const [isUserProfileOpen, setIsUserProfileOpen] = useState(false);
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [locationDisplay, setLocationDisplay] = useState('Near you');
 
   const toggleDarkMode = () => {
@@ -117,7 +121,10 @@ export const Header: React.FC = () => {
                 {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
               </button>
               
-              <button className="p-2.5 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 relative glass-subtle rounded-xl transition-all duration-200 hover:shadow-lg">
+              <button 
+                onClick={() => setIsNotificationsOpen(true)}
+                className="p-2.5 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 relative glass-subtle rounded-xl transition-all duration-200 hover:shadow-lg"
+              >
                 <Bell className="w-5 h-5" />
                 <span className="absolute top-1 right-1 flex h-2 w-2">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
@@ -125,7 +132,10 @@ export const Header: React.FC = () => {
                 </span>
               </button>
 
-              <button className="p-2.5 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 glass-subtle rounded-xl transition-all duration-200 hover:shadow-lg">
+              <button 
+                onClick={() => setIsUserProfileOpen(true)}
+                className="p-2.5 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 glass-subtle rounded-xl transition-all duration-200 hover:shadow-lg"
+              >
                 <User className="w-5 h-5" />
               </button>
             </div>
@@ -167,7 +177,13 @@ export const Header: React.FC = () => {
               )}
               
               <div className="flex items-center space-x-2 px-4">
-                <button className="flex-1 p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 relative glass-subtle rounded-xl transition-all duration-200">
+                <button 
+                  onClick={() => {
+                    setIsNotificationsOpen(true);
+                    setIsMobileMenuOpen(false);
+                  }}
+                  className="flex-1 p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 relative glass-subtle rounded-xl transition-all duration-200"
+                >
                   <Bell className="w-5 h-5 mx-auto" />
                   <span className="absolute top-1 right-1/4 flex h-2 w-2">
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
@@ -175,7 +191,13 @@ export const Header: React.FC = () => {
                   </span>
                 </button>
 
-                <button className="flex-1 p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 glass-subtle rounded-xl transition-all duration-200">
+                <button 
+                  onClick={() => {
+                    setIsUserProfileOpen(true);
+                    setIsMobileMenuOpen(false);
+                  }}
+                  className="flex-1 p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 glass-subtle rounded-xl transition-all duration-200"
+                >
                   <User className="w-5 h-5 mx-auto" />
                 </button>
               </div>
@@ -188,6 +210,18 @@ export const Header: React.FC = () => {
       <LocationModal 
         isOpen={isLocationModalOpen} 
         onClose={() => setIsLocationModalOpen(false)} 
+      />
+
+      {/* User Profile Modal */}
+      <UserProfile
+        isOpen={isUserProfileOpen}
+        onClose={() => setIsUserProfileOpen(false)}
+      />
+
+      {/* Notifications Panel */}
+      <NotificationsPanel
+        isOpen={isNotificationsOpen}
+        onClose={() => setIsNotificationsOpen(false)}
       />
     </header>
   );
