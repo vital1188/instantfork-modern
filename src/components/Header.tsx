@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { MapPin, Bell, User, Menu, X, Sparkles, Moon, Sun } from 'lucide-react';
 import { useStore } from '../store/useStore';
+import { LocationModal } from './LocationModal';
 
 export const Header: React.FC = () => {
   const { viewMode, setViewMode, userLocation } = useStore();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
+  const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
 
   const toggleDarkMode = () => {
     setIsDarkMode(!isDarkMode);
@@ -67,10 +69,13 @@ export const Header: React.FC = () => {
 
             {/* Location */}
             {userLocation && (
-              <div className="flex items-center text-sm text-gray-600 dark:text-gray-400 glass-subtle px-4 py-2 rounded-xl">
-                <MapPin className="w-4 h-4 mr-2 text-rose-500" />
+              <button 
+                onClick={() => setIsLocationModalOpen(true)}
+                className="flex items-center text-sm text-gray-600 dark:text-gray-400 glass-subtle px-4 py-2 rounded-xl hover:bg-white/80 dark:hover:bg-gray-800/80 transition-all duration-200 cursor-pointer group"
+              >
+                <MapPin className="w-4 h-4 mr-2 text-rose-500 group-hover:animate-pulse" />
                 <span className="font-medium">Near you</span>
-              </div>
+              </button>
             )}
 
             {/* Actions */}
@@ -119,10 +124,16 @@ export const Header: React.FC = () => {
           <div className="md:hidden py-4 border-t border-gray-200/20 dark:border-gray-700/20 animate-in slide-in-from-top-2">
             <div className="space-y-3">
               {userLocation && (
-                <div className="flex items-center text-sm text-gray-600 dark:text-gray-400 px-4 py-2">
+                <button 
+                  onClick={() => {
+                    setIsMobileMenuOpen(false);
+                    setIsLocationModalOpen(true);
+                  }}
+                  className="flex items-center text-sm text-gray-600 dark:text-gray-400 px-4 py-2 w-full text-left hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition-colors"
+                >
                   <MapPin className="w-4 h-4 mr-2 text-rose-500" />
                   <span>Near you</span>
-                </div>
+                </button>
               )}
               
               <div className="flex items-center space-x-2 px-4">
@@ -142,6 +153,12 @@ export const Header: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* Location Modal */}
+      <LocationModal 
+        isOpen={isLocationModalOpen} 
+        onClose={() => setIsLocationModalOpen(false)} 
+      />
     </header>
   );
 };
