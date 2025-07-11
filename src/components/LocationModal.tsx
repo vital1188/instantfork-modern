@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { MapPin, X, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { MapPin, Navigation, X, Loader2, Search } from 'lucide-react';
 import { useStore } from '../store/useStore';
 
 interface LocationModalProps {
@@ -10,50 +10,51 @@ interface LocationModalProps {
 export const LocationModal: React.FC<LocationModalProps> = ({ isOpen, onClose }) => {
   const { userLocation, setUserLocation } = useStore();
   const [isLoading, setIsLoading] = useState(false);
-  const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle');
-  const [message, setMessage] = useState('');
+  const [address, setAddress] = useState('');
+  const [searchInput, setSearchInput] = useState('');
+  const [error, setError] = useState<string | null>(null);
 
-  const updateLocation = () => {
+  // Reverse geocode to get address from coordinates
+  useEffect(() => {
+    if (userLocation) {
+      fetchAddress(userLocation.lat, userLocation.lng);
+    }
+  }, [userLocation]);
+
+  const fetchAddress = async (lat: number, lng: number) => {
+    try {
+      // Using OpenStreetMap's Nominatim API for reverse geocoding
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`
+      );
+      const data = await response.json();
+      if (data.display_name) {
+        // Extract relevant parts of the address
+        const parts = data.display_name.split(',');
+        const shortAddress = parts.slice(0, 3).join(',').trim();
+        setAddress(shortAddress);
+      }
+    } catch (err) {
+      console.error('Error fetching address:', err);
+      setAddress('Location detected');
+    }
+  };
+
+  const handleGetCurrentLocation = () => {
     setIsLoading(true);
-    setStatus('idle');
+    setError(null);
 
     if ('geolocation' in navigator) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
-          const newLocation = {
+          setUserLocation({
             lat: position.coords.latitude,
             lng: position.coords.longitude
-          };
-          setUserLocation(newLocation);
-          setStatus('success');
-          setMessage(`Location updated successfully!\nLat: ${newLocation.lat.toFixed(4)}, Lng: ${newLocation.lng.toFixed(4)}`);
+          });
           setIsLoading(false);
-          
-          // Auto close after 2 seconds on success
-          setTimeout(() => {
-            onClose();
-            setStatus('idle');
-          }, 2000);
         },
         (error) => {
-          setStatus('error');
-          let errorMessage = 'Unable to get your location. ';
-          
-          switch(error.code) {
-            case error.PERMISSION_DENIED:
-              errorMessage += 'Please enable location permissions in your browser settings.';
-              break;
-            case error.POSITION_UNAVAILABLE:
-              errorMessage += 'Location information is currently unavailable.';
-              break;
-            case error.TIMEOUT:
-              errorMessage += 'Location request timed out. Please try again.';
-              break;
-            default:
-              errorMessage += 'An unknown error occurred.';
-          }
-          
-          setMessage(errorMessage);
+          setError('Unable to get your location. Please check your permissions.');
           setIsLoading(false);
         },
         {
@@ -63,8 +64,37 @@ export const LocationModal: React.FC<LocationModalProps> = ({ isOpen, onClose })
         }
       );
     } else {
-      setStatus('error');
-      setMessage('Geolocation is not supported by your browser.');
+      setError('Geolocation is not supported by your browser.');
+      setIsLoading(false);
+    }
+  };
+
+  const handleSearchLocation = async () => {
+    if (!searchInput.trim()) return;
+    
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      // Using OpenStreetMap's Nominatim API for geocoding
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchInput)}&limit=1`
+      );
+      const data = await response.json();
+      
+      if (data && data.length > 0) {
+        const location = data[0];
+        setUserLocation({
+          lat: parseFloat(location.lat),
+          lng: parseFloat(location.lon)
+        });
+        setSearchInput('');
+      } else {
+        setError('Location not found. Please try a different search.');
+      }
+    } catch (err) {
+      setError('Error searching for location. Please try again.');
+    } finally {
       setIsLoading(false);
     }
   };
@@ -74,17 +104,17 @@ export const LocationModal: React.FC<LocationModalProps> = ({ isOpen, onClose })
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-300">
       <div className="bg-white dark:bg-gray-900 rounded-3xl max-w-md w-full shadow-2xl animate-in slide-in-from-bottom-4 duration-500">
-        <div className="p-6">
-          {/* Header */}
-          <div className="flex justify-between items-start mb-6">
-            <div className="flex items-center space-x-3">
-              <div className="p-3 bg-rose-100 dark:bg-rose-900/30 rounded-2xl">
-                <MapPin className="w-6 h-6 text-rose-500" />
-              </div>
-              <div>
-                <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">Update Location</h2>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Get deals near your current location</p>
-              </div>
+        {/* Header */}
+        <div className="p-6 border-b border-gray-200 dark:border-gray-800">
+          <div className="flex justify-between items-center">
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 flex items-center">
+                <MapPin className="w-6 h-6 mr-2 text-rose-500" />
+                Your Location
+              </h2>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                Set your location to find the best deals nearby
+              </p>
             </div>
             <button
               onClick={onClose}
@@ -93,61 +123,96 @@ export const LocationModal: React.FC<LocationModalProps> = ({ isOpen, onClose })
               <X className="w-5 h-5 text-gray-500" />
             </button>
           </div>
+        </div>
 
-          {/* Current Location */}
-          {userLocation && status === 'idle' && (
-            <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-800 rounded-2xl">
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Current location:</p>
-              <p className="font-mono text-sm text-gray-900 dark:text-gray-100">
-                {userLocation.lat.toFixed(4)}, {userLocation.lng.toFixed(4)}
-              </p>
+        {/* Content */}
+        <div className="p-6 space-y-4">
+          {/* Current Location Display */}
+          {userLocation && (
+            <div className="glass rounded-2xl p-4 space-y-2">
+              <div className="flex items-start space-x-3">
+                <div className="p-2 bg-rose-100 dark:bg-rose-900/30 rounded-xl">
+                  <MapPin className="w-5 h-5 text-rose-500" />
+                </div>
+                <div className="flex-1">
+                  <p className="font-medium text-gray-900 dark:text-gray-100">Current Location</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                    {address || 'Loading address...'}
+                  </p>
+                  <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
+                    {userLocation.lat.toFixed(6)}, {userLocation.lng.toFixed(6)}
+                  </p>
+                </div>
+              </div>
             </div>
           )}
 
-          {/* Status Messages */}
-          {status === 'success' && (
-            <div className="mb-6 p-4 bg-green-50 dark:bg-green-900/30 rounded-2xl flex items-start space-x-3">
-              <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
-              <p className="text-sm text-green-800 dark:text-green-200 whitespace-pre-line">{message}</p>
+          {/* Error Message */}
+          {error && (
+            <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl">
+              <p className="text-sm text-red-800 dark:text-red-200">{error}</p>
             </div>
           )}
 
-          {status === 'error' && (
-            <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/30 rounded-2xl flex items-start space-x-3">
-              <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
-              <p className="text-sm text-red-800 dark:text-red-200">{message}</p>
+          {/* Search Location */}
+          <div className="space-y-3">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              Search for a location
+            </label>
+            <div className="flex space-x-2">
+              <input
+                type="text"
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && handleSearchLocation()}
+                placeholder="Enter city, address, or zip code"
+                className="flex-1 px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all"
+              />
+              <button
+                onClick={handleSearchLocation}
+                disabled={isLoading || !searchInput.trim()}
+                className="p-3 bg-gray-100 dark:bg-gray-800 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+              >
+                {isLoading ? (
+                  <Loader2 className="w-5 h-5 animate-spin text-gray-600 dark:text-gray-400" />
+                ) : (
+                  <Search className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+                )}
+              </button>
             </div>
-          )}
-
-          {/* Loading State */}
-          {isLoading && (
-            <div className="mb-6 text-center py-8">
-              <Loader2 className="w-8 h-8 text-rose-500 animate-spin mx-auto mb-3" />
-              <p className="text-sm text-gray-600 dark:text-gray-400">Getting your location...</p>
-            </div>
-          )}
+          </div>
 
           {/* Actions */}
-          <div className="flex gap-3">
+          <div className="space-y-3 pt-2">
             <button
-              onClick={updateLocation}
+              onClick={handleGetCurrentLocation}
               disabled={isLoading}
-              className="flex-1 btn-primary disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+              className="w-full btn-primary flex items-center justify-center space-x-2"
             >
-              <MapPin className="w-4 h-4" />
-              <span>{isLoading ? 'Updating...' : 'Update Location'}</span>
+              {isLoading ? (
+                <>
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  <span>Getting location...</span>
+                </>
+              ) : (
+                <>
+                  <Navigation className="w-5 h-5" />
+                  <span>Use Current Location</span>
+                </>
+              )}
             </button>
+
             <button
               onClick={onClose}
-              className="flex-1 btn-secondary"
+              className="w-full btn-secondary"
             >
-              Cancel
+              Done
             </button>
           </div>
 
-          {/* Help Text */}
-          <p className="text-xs text-gray-500 dark:text-gray-500 text-center mt-4">
-            Make sure location services are enabled in your browser
+          {/* Privacy Note */}
+          <p className="text-xs text-center text-gray-500 dark:text-gray-500 pt-2">
+            Your location is only used to show nearby deals and is never shared.
           </p>
         </div>
       </div>

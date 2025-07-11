@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { MapPin, Bell, User, Menu, X, Sparkles, Moon, Sun } from 'lucide-react';
 import { useStore } from '../store/useStore';
 import { LocationModal } from './LocationModal';
@@ -8,10 +8,40 @@ export const Header: React.FC = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
+  const [locationDisplay, setLocationDisplay] = useState('Near you');
 
   const toggleDarkMode = () => {
     setIsDarkMode(!isDarkMode);
     document.documentElement.classList.toggle('dark');
+  };
+
+  // Fetch location name when coordinates change
+  useEffect(() => {
+    if (userLocation) {
+      fetchLocationName(userLocation.lat, userLocation.lng);
+    }
+  }, [userLocation]);
+
+  const fetchLocationName = async (lat: number, lng: number) => {
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`
+      );
+      const data = await response.json();
+      if (data.address) {
+        // Try to get neighborhood, suburb, or city
+        const location = data.address.neighbourhood || 
+                        data.address.suburb || 
+                        data.address.city || 
+                        data.address.town || 
+                        data.address.village ||
+                        'Near you';
+        setLocationDisplay(location);
+      }
+    } catch (err) {
+      console.error('Error fetching location name:', err);
+      setLocationDisplay('Near you');
+    }
   };
 
   return (
@@ -69,12 +99,12 @@ export const Header: React.FC = () => {
 
             {/* Location */}
             {userLocation && (
-              <button 
+              <button
                 onClick={() => setIsLocationModalOpen(true)}
-                className="flex items-center text-sm text-gray-600 dark:text-gray-400 glass-subtle px-4 py-2 rounded-xl hover:bg-white/80 dark:hover:bg-gray-800/80 transition-all duration-200 cursor-pointer group"
+                className="flex items-center text-sm text-gray-600 dark:text-gray-400 glass-subtle px-4 py-2 rounded-xl hover:bg-white/80 dark:hover:bg-gray-800/80 transition-all duration-200 group"
               >
-                <MapPin className="w-4 h-4 mr-2 text-rose-500 group-hover:animate-pulse" />
-                <span className="font-medium">Near you</span>
+                <MapPin className="w-4 h-4 mr-2 text-rose-500 group-hover:scale-110 transition-transform" />
+                <span className="font-medium">{locationDisplay}</span>
               </button>
             )}
 
@@ -124,15 +154,15 @@ export const Header: React.FC = () => {
           <div className="md:hidden py-4 border-t border-gray-200/20 dark:border-gray-700/20 animate-in slide-in-from-top-2">
             <div className="space-y-3">
               {userLocation && (
-                <button 
+                <button
                   onClick={() => {
-                    setIsMobileMenuOpen(false);
                     setIsLocationModalOpen(true);
+                    setIsMobileMenuOpen(false);
                   }}
-                  className="flex items-center text-sm text-gray-600 dark:text-gray-400 px-4 py-2 w-full text-left hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition-colors"
+                  className="flex items-center text-sm text-gray-600 dark:text-gray-400 px-4 py-2 w-full text-left hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
                 >
                   <MapPin className="w-4 h-4 mr-2 text-rose-500" />
-                  <span>Near you</span>
+                  <span>{locationDisplay}</span>
                 </button>
               )}
               
