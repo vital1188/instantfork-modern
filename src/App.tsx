@@ -156,107 +156,113 @@ function App() {
       
       <Header />
       
-      <main className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        {/* Search Bar */}
-        <SearchBar />
+      {viewMode === 'map' ? (
+        // Map View - Full screen without other elements
+        <main className="relative h-[calc(100vh-64px)]">
+          <MapView deals={filteredDeals} />
+        </main>
+      ) : (
+        // List View - With all the features
+        <main className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          {/* Search Bar */}
+          <SearchBar />
 
-        {/* Featured Deals Carousel */}
-        <FeaturedDeals deals={filteredDeals} onDealClick={setSelectedDeal} />
+          {/* Featured Deals Carousel */}
+          <FeaturedDeals deals={filteredDeals} onDealClick={setSelectedDeal} />
 
-        {/* Categories */}
-        <div className="mb-8">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Browse by Category</h3>
-          <div className="grid grid-cols-3 sm:grid-cols-6 gap-4">
-            {[
-              { icon: Pizza, name: 'Pizza', color: 'text-orange-500' },
-              { icon: Coffee, name: 'Coffee', color: 'text-brown-600' },
-              { icon: Utensils, name: 'Dining', color: 'text-blue-500' },
-              { icon: Wine, name: 'Drinks', color: 'text-purple-500' },
-              { icon: Sandwich, name: 'Fast Food', color: 'text-green-500' },
-              { icon: IceCream, name: 'Desserts', color: 'text-pink-500' },
-            ].map((category) => (
+          {/* Categories */}
+          <div className="mb-8">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Browse by Category</h3>
+            <div className="grid grid-cols-3 sm:grid-cols-6 gap-4">
+              {[
+                { icon: Pizza, name: 'Pizza', color: 'text-orange-500' },
+                { icon: Coffee, name: 'Coffee', color: 'text-brown-600' },
+                { icon: Utensils, name: 'Dining', color: 'text-blue-500' },
+                { icon: Wine, name: 'Drinks', color: 'text-purple-500' },
+                { icon: Sandwich, name: 'Fast Food', color: 'text-green-500' },
+                { icon: IceCream, name: 'Desserts', color: 'text-pink-500' },
+              ].map((category) => (
+                <button
+                  key={category.name}
+                  className="flex flex-col items-center p-4 glass rounded-2xl hover:bg-white/80 dark:hover:bg-gray-800/80 transition-all duration-200 group"
+                >
+                  <category.icon className={`w-8 h-8 ${category.color} group-hover:scale-110 transition-transform duration-200`} />
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300 mt-2">{category.name}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Location Error Alert */}
+          {locationError && (
+            <div className="mb-4 p-4 glass rounded-2xl border-yellow-500/20 bg-yellow-50/50 dark:bg-yellow-900/20">
+              <p className="text-sm text-yellow-800 dark:text-yellow-200">{locationError}</p>
+            </div>
+          )}
+
+          {/* Mobile View Toggle */}
+          <div className="flex sm:hidden items-center justify-between mb-6">
+            <div className="flex items-center space-x-1 glass rounded-2xl p-1.5">
               <button
-                key={category.name}
-                className="flex flex-col items-center p-4 glass rounded-2xl hover:bg-white/80 dark:hover:bg-gray-800/80 transition-all duration-200 group"
+                onClick={() => setViewMode('list')}
+                className={`p-2.5 rounded-xl transition-all duration-200 ${
+                  viewMode === 'list' 
+                    ? 'gradient-primary text-white shadow-lg' 
+                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100'
+                }`}
               >
-                <category.icon className={`w-8 h-8 ${category.color} group-hover:scale-110 transition-transform duration-200`} />
-                <span className="text-sm font-medium text-gray-700 dark:text-gray-300 mt-2">{category.name}</span>
+                <Grid3X3 className="w-5 h-5" />
               </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Location Error Alert */}
-        {locationError && (
-          <div className="mb-4 p-4 glass rounded-2xl border-yellow-500/20 bg-yellow-50/50 dark:bg-yellow-900/20">
-            <p className="text-sm text-yellow-800 dark:text-yellow-200">{locationError}</p>
-          </div>
-        )}
-
-        {/* Mobile View Toggle */}
-        <div className="flex sm:hidden items-center justify-between mb-6">
-          <div className="flex items-center space-x-1 glass rounded-2xl p-1.5">
+              <button
+                onClick={() => setViewMode('map')}
+                className={`p-2.5 rounded-xl transition-all duration-200 ${
+                  viewMode === 'map' 
+                    ? 'gradient-primary text-white shadow-lg' 
+                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100'
+                }`}
+              >
+                <Map className="w-5 h-5" />
+              </button>
+            </div>
             <button
-              onClick={() => setViewMode('list')}
-              className={`p-2.5 rounded-xl transition-all duration-200 ${
-                viewMode === 'list' 
-                  ? 'gradient-primary text-white shadow-lg' 
-                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100'
-              }`}
+              onClick={() => setIsFilterOpen(true)}
+              className="flex items-center space-x-2 px-5 py-2.5 glass rounded-2xl hover:bg-white/80 dark:hover:bg-gray-800/80 transition-all duration-200 group"
             >
-              <Grid3X3 className="w-5 h-5" />
-            </button>
-            <button
-              onClick={() => setViewMode('map')}
-              className={`p-2.5 rounded-xl transition-all duration-200 ${
-                viewMode === 'map' 
-                  ? 'gradient-primary text-white shadow-lg' 
-                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100'
-              }`}
-            >
-              <Map className="w-5 h-5" />
+              <Filter className="w-4 h-4 group-hover:rotate-180 transition-transform duration-300" />
+              <span className="font-medium">Filters</span>
+              {(filters.cuisine.length > 0 || filters.dietaryNeeds.length > 0 || filters.distance !== 5) && (
+                <span className="flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-2 w-2 rounded-full bg-rose-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500"></span>
+                </span>
+              )}
             </button>
           </div>
-          <button
-            onClick={() => setIsFilterOpen(true)}
-            className="flex items-center space-x-2 px-5 py-2.5 glass rounded-2xl hover:bg-white/80 dark:hover:bg-gray-800/80 transition-all duration-200 group"
-          >
-            <Filter className="w-4 h-4 group-hover:rotate-180 transition-transform duration-300" />
-            <span className="font-medium">Filters</span>
-            {(filters.cuisine.length > 0 || filters.dietaryNeeds.length > 0 || filters.distance !== 5) && (
-              <span className="flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-2 w-2 rounded-full bg-rose-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500"></span>
-              </span>
-            )}
-          </button>
-        </div>
 
-        {/* Desktop Filter Button */}
-        <div className="hidden sm:flex justify-between items-center mb-8">
-          <div>
-            <h2 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
-              <span className="text-gradient">{filteredDeals.length}</span> deals near you
-            </h2>
-            <p className="text-gray-600 dark:text-gray-400 mt-1">Fresh deals updated in real-time</p>
+          {/* Desktop Filter Button */}
+          <div className="hidden sm:flex justify-between items-center mb-8">
+            <div>
+              <h2 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
+                <span className="text-gradient">{filteredDeals.length}</span> deals near you
+              </h2>
+              <p className="text-gray-600 dark:text-gray-400 mt-1">Fresh deals updated in real-time</p>
+            </div>
+            <button
+              onClick={() => setIsFilterOpen(true)}
+              className="flex items-center space-x-2 px-6 py-3 glass rounded-2xl hover:bg-white/80 dark:hover:bg-gray-800/80 transition-all duration-200 group"
+            >
+              <Filter className="w-5 h-5 group-hover:rotate-180 transition-transform duration-300" />
+              <span className="font-medium">Filters</span>
+              {(filters.cuisine.length > 0 || filters.dietaryNeeds.length > 0 || filters.distance !== 5) && (
+                <span className="flex h-2 w-2 ml-2">
+                  <span className="animate-ping absolute inline-flex h-2 w-2 rounded-full bg-rose-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500"></span>
+                </span>
+              )}
+            </button>
           </div>
-          <button
-            onClick={() => setIsFilterOpen(true)}
-            className="flex items-center space-x-2 px-6 py-3 glass rounded-2xl hover:bg-white/80 dark:hover:bg-gray-800/80 transition-all duration-200 group"
-          >
-            <Filter className="w-5 h-5 group-hover:rotate-180 transition-transform duration-300" />
-            <span className="font-medium">Filters</span>
-            {(filters.cuisine.length > 0 || filters.dietaryNeeds.length > 0 || filters.distance !== 5) && (
-              <span className="flex h-2 w-2 ml-2">
-                <span className="animate-ping absolute inline-flex h-2 w-2 rounded-full bg-rose-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500"></span>
-              </span>
-            )}
-          </button>
-        </div>
 
-        {/* Content */}
-        {viewMode === 'list' ? (
+          {/* Content */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 animate-in">
             {filteredDeals.map((deal, index) => (
               <div
@@ -271,28 +277,24 @@ function App() {
               </div>
             ))}
           </div>
-        ) : (
-          <div className="h-[calc(100vh-200px)] rounded-2xl overflow-hidden shadow-2xl animate-in">
-            <MapView deals={filteredDeals} />
-          </div>
-        )}
 
-        {filteredDeals.length === 0 && (
-          <div className="text-center py-16 animate-in">
-            <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gray-100 dark:bg-gray-800 mb-6">
-              <Filter className="w-10 h-10 text-gray-400" />
+          {filteredDeals.length === 0 && (
+            <div className="text-center py-16 animate-in">
+              <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gray-100 dark:bg-gray-800 mb-6">
+                <Filter className="w-10 h-10 text-gray-400" />
+              </div>
+              <p className="text-gray-600 dark:text-gray-400 text-lg mb-2">No deals found matching your filters</p>
+              <p className="text-gray-500 dark:text-gray-500 text-sm mb-6">Try adjusting your search criteria</p>
+              <button
+                onClick={() => setIsFilterOpen(true)}
+                className="btn-primary"
+              >
+                Adjust Filters
+              </button>
             </div>
-            <p className="text-gray-600 dark:text-gray-400 text-lg mb-2">No deals found matching your filters</p>
-            <p className="text-gray-500 dark:text-gray-500 text-sm mb-6">Try adjusting your search criteria</p>
-            <button
-              onClick={() => setIsFilterOpen(true)}
-              className="btn-primary"
-            >
-              Adjust Filters
-            </button>
-          </div>
-        )}
-      </main>
+          )}
+        </main>
+      )}
 
       <HungryNowButton />
 

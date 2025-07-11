@@ -78,7 +78,7 @@ export const Header: React.FC = () => {
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-6">
             {/* View Mode Toggle */}
-            <div className="flex items-center space-x-1 glass-subtle rounded-2xl p-1">
+            <div className="flex items-center space-x-1 glass-subtle rounded-2xl p-1 relative z-10">
               <button
                 onClick={() => setViewMode('list')}
                 className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
