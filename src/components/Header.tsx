@@ -1,17 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import { MapPin, Bell, User, Menu, X, Sparkles, Moon, Sun } from 'lucide-react';
+import { MapPin, Bell, User, Menu, X, Sparkles, Moon, Sun, LogOut } from 'lucide-react';
 import { useStore } from '../store/useStore';
 import { LocationModal } from './LocationModal';
 import { UserProfile } from './UserProfile';
 import { NotificationsPanel } from './NotificationsPanel';
+import { AuthModal } from './AuthModal';
+import { useAuth } from '../contexts/AuthContext';
 
 export const Header: React.FC = () => {
   const { viewMode, setViewMode, userLocation } = useStore();
+  const { user, signOut } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
   const [isUserProfileOpen, setIsUserProfileOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [locationDisplay, setLocationDisplay] = useState('Near you');
 
   const toggleDarkMode = () => {
@@ -132,12 +136,32 @@ export const Header: React.FC = () => {
                 </span>
               </button>
 
-              <button 
-                onClick={() => setIsUserProfileOpen(true)}
-                className="p-2.5 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 glass-subtle rounded-xl transition-all duration-200 hover:shadow-lg"
-              >
-                <User className="w-5 h-5" />
-              </button>
+              {user ? (
+                <div className="flex items-center space-x-2">
+                  <button 
+                    onClick={() => setIsUserProfileOpen(true)}
+                    className="p-2.5 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 glass-subtle rounded-xl transition-all duration-200 hover:shadow-lg"
+                  >
+                    <User className="w-5 h-5" />
+                  </button>
+                  <button 
+                    onClick={async () => {
+                      await signOut();
+                    }}
+                    className="p-2.5 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 glass-subtle rounded-xl transition-all duration-200 hover:shadow-lg"
+                    title="Sign Out"
+                  >
+                    <LogOut className="w-5 h-5" />
+                  </button>
+                </div>
+              ) : (
+                <button 
+                  onClick={() => setIsAuthModalOpen(true)}
+                  className="px-4 py-2 btn-primary text-sm"
+                >
+                  Sign In
+                </button>
+              )}
             </div>
           </div>
 
@@ -191,15 +215,38 @@ export const Header: React.FC = () => {
                   </span>
                 </button>
 
-                <button 
-                  onClick={() => {
-                    setIsUserProfileOpen(true);
-                    setIsMobileMenuOpen(false);
-                  }}
-                  className="flex-1 p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 glass-subtle rounded-xl transition-all duration-200"
-                >
-                  <User className="w-5 h-5 mx-auto" />
-                </button>
+                {user ? (
+                  <>
+                    <button 
+                      onClick={() => {
+                        setIsUserProfileOpen(true);
+                        setIsMobileMenuOpen(false);
+                      }}
+                      className="flex-1 p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 glass-subtle rounded-xl transition-all duration-200"
+                    >
+                      <User className="w-5 h-5 mx-auto" />
+                    </button>
+                    <button 
+                      onClick={async () => {
+                        await signOut();
+                        setIsMobileMenuOpen(false);
+                      }}
+                      className="flex-1 p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 glass-subtle rounded-xl transition-all duration-200"
+                    >
+                      <LogOut className="w-5 h-5 mx-auto" />
+                    </button>
+                  </>
+                ) : (
+                  <button 
+                    onClick={() => {
+                      setIsAuthModalOpen(true);
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className="flex-1 p-2 btn-primary mx-4"
+                  >
+                    Sign In
+                  </button>
+                )}
               </div>
             </div>
           </div>
@@ -222,6 +269,12 @@ export const Header: React.FC = () => {
       <NotificationsPanel
         isOpen={isNotificationsOpen}
         onClose={() => setIsNotificationsOpen(false)}
+      />
+
+      {/* Auth Modal */}
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
       />
     </header>
   );

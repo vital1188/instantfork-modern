@@ -1,8 +1,10 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Clock, MapPin, Tag, Heart, Star, TrendingUp, Users } from 'lucide-react';
 import { Deal } from '../types';
 import { formatPrice, calculateSavings, getTimeRemaining, calculateDistance } from '../utils/helpers';
 import { useStore } from '../store/useStore';
+import { useAuth } from '../contexts/AuthContext';
+import { addFavorite, removeFavorite, getUserFavorites } from '../lib/supabase';
 
 interface DealCardProps {
   deal: Deal;
@@ -10,18 +12,54 @@ interface DealCardProps {
 }
 
 export const DealCard: React.FC<DealCardProps> = ({ deal, onClick }) => {
-  const { user, userLocation, toggleFavorite } = useStore();
+  const { userLocation } = useStore();
+  const { user } = useAuth();
+  const [isFavorite, setIsFavorite] = useState(false);
+  const [isLoadingFavorite, setIsLoadingFavorite] = useState(false);
+  
   const savings = calculateSavings(deal.original_price, deal.deal_price);
   const timeRemaining = getTimeRemaining(deal.end_time);
   const distance = userLocation 
     ? calculateDistance(userLocation.lat, userLocation.lng, deal.location.lat, deal.location.lng)
     : null;
-  
-  const isFavorite = user?.favorites.includes(deal.id) || false;
 
-  const handleFavoriteClick = (e: React.MouseEvent) => {
+  useEffect(() => {
+    if (user) {
+      checkIfFavorite();
+    }
+  }, [user, deal.id]);
+
+  const checkIfFavorite = async () => {
+    if (!user) return;
+    
+    const { data } = await getUserFavorites(user.id);
+    if (data) {
+      setIsFavorite(data.some(fav => fav.deal_id === deal.id));
+    }
+  };
+
+  const handleFavoriteClick = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    toggleFavorite(deal.id);
+    
+    if (!user) {
+      // Could show auth modal here
+      return;
+    }
+
+    setIsLoadingFavorite(true);
+    try {
+      if (isFavorite) {
+        await removeFavorite(user.id, deal.id);
+        setIsFavorite(false);
+      } else {
+        await addFavorite(user.id, deal.id);
+        setIsFavorite(true);
+      }
+    } catch (error) {
+      console.error('Error toggling favorite:', error);
+    } finally {
+      setIsLoadingFavorite(false);
+    }
   };
 
   // Generate random values for demo purposes
@@ -49,14 +87,15 @@ export const DealCard: React.FC<DealCardProps> = ({ deal, onClick }) => {
           {/* Favorite Button */}
           <button
             onClick={handleFavoriteClick}
-            className="p-2.5 glass rounded-xl shadow-lg hover:bg-white/90 dark:hover:bg-gray-800/90 transition-all duration-200 group/fav"
+            disabled={isLoadingFavorite}
+            className="p-2.5 glass rounded-xl shadow-lg hover:bg-white/90 dark:hover:bg-gray-800/90 transition-all duration-200 group/fav disabled:opacity-50"
           >
             <Heart 
               className={`w-5 h-5 transition-all duration-300 ${
                 isFavorite 
                   ? 'fill-rose-500 text-rose-500 scale-110' 
                   : 'text-gray-700 dark:text-gray-300 group-hover/fav:text-rose-500 group-hover/fav:scale-110'
-              }`} 
+              } ${isLoadingFavorite ? 'animate-pulse' : ''}`} 
             />
           </button>
 

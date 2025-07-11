@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { User, Settings, Heart, LogOut, ChevronRight, Star } from 'lucide-react';
 import { useStore } from '../store/useStore';
+import { useAuth } from '../contexts/AuthContext';
+import { getUserProfile, getUserDealHistory, getUserFavorites } from '../lib/supabase';
 
 interface UserProfileProps {
   isOpen: boolean;
@@ -8,24 +10,56 @@ interface UserProfileProps {
 }
 
 export const UserProfile: React.FC<UserProfileProps> = ({ isOpen, onClose }) => {
-  const { user } = useStore();
+  const { user: authUser, signOut } = useAuth();
   const [activeTab, setActiveTab] = useState<'profile' | 'favorites' | 'history'>('profile');
+  const [loading, setLoading] = useState(true);
+  const [profile, setProfile] = useState<any>(null);
+  const [dealHistory, setDealHistory] = useState<any[]>([]);
+  const [favorites, setFavorites] = useState<any[]>([]);
 
-  if (!isOpen || !user) return null;
+  useEffect(() => {
+    if (authUser && isOpen) {
+      loadUserData();
+    }
+  }, [authUser, isOpen]);
 
-  // Mock data for demonstration
-  const stats = {
-    totalSaved: 245.50,
-    dealsRedeemed: 23,
-    favoriteRestaurants: 8,
-    memberSince: 'Jan 2024'
+  const loadUserData = async () => {
+    if (!authUser) return;
+    
+    setLoading(true);
+    try {
+      // Load user profile
+      const { data: profileData } = await getUserProfile(authUser.id);
+      setProfile(profileData);
+
+      // Load deal history
+      const { data: historyData } = await getUserDealHistory(authUser.id);
+      setDealHistory(historyData || []);
+
+      // Load favorites
+      const { data: favoritesData } = await getUserFavorites(authUser.id);
+      setFavorites(favoritesData || []);
+    } catch (error) {
+      console.error('Error loading user data:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const recentHistory = [
-    { id: 1, restaurant: 'The Rustic Table', deal: '50% Off Dinner', date: '2 days ago', saved: 22.50 },
-    { id: 2, restaurant: 'Sakura Sushi', deal: 'BOGO Sushi Rolls', date: '5 days ago', saved: 18.00 },
-    { id: 3, restaurant: 'Bella Italia', deal: 'Free Dessert', date: '1 week ago', saved: 8.00 },
-  ];
+  if (!isOpen || !authUser) return null;
+
+  // Calculate stats from real data
+  const stats = {
+    totalSaved: profile?.total_saved || 0,
+    dealsRedeemed: dealHistory.length,
+    favoriteRestaurants: favorites.length,
+    memberSince: authUser.created_at ? new Date(authUser.created_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : 'New Member'
+  };
+
+  const handleSignOut = async () => {
+    await signOut();
+    onClose();
+  };
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-300">
@@ -45,8 +79,8 @@ export const UserProfile: React.FC<UserProfileProps> = ({ isOpen, onClose }) => 
               <User className="w-16 h-16 text-gray-400" />
             </div>
             <div className="pb-4">
-              <h2 className="text-2xl font-bold text-white">{user.name}</h2>
-              <p className="text-white/80">{user.email}</p>
+              <h2 className="text-2xl font-bold text-white">{authUser.user_metadata?.full_name || 'User'}</h2>
+              <p className="text-white/80">{authUser.email}</p>
             </div>
           </div>
         </div>
@@ -135,7 +169,10 @@ export const UserProfile: React.FC<UserProfileProps> = ({ isOpen, onClose }) => 
                 <ChevronRight className="w-5 h-5 text-gray-400" />
               </button>
 
-              <button className="w-full flex items-center justify-between p-4 glass rounded-2xl hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors text-red-600 dark:text-red-400">
+              <button 
+                onClick={handleSignOut}
+                className="w-full flex items-center justify-between p-4 glass rounded-2xl hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors text-red-600 dark:text-red-400"
+              >
                 <div className="flex items-center space-x-3">
                   <LogOut className="w-5 h-5" />
                   <span className="font-medium">Sign Out</span>
@@ -145,31 +182,51 @@ export const UserProfile: React.FC<UserProfileProps> = ({ isOpen, onClose }) => 
           )}
 
           {activeTab === 'favorites' && (
-            <div className="text-center py-8">
-              <Heart className="w-12 h-12 text-gray-300 dark:text-gray-700 mx-auto mb-4" />
-              <p className="text-gray-600 dark:text-gray-400">Your favorite deals will appear here</p>
-            </div>
+            loading ? (
+              <div className="text-center py-8">
+                <div className="w-8 h-8 border-2 border-rose-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
+              </div>
+            ) : favorites.length > 0 ? (
+              <div className="space-y-3">
+                {favorites.map((fav) => (
+                  <div key={fav.deal_id} className="p-4 glass rounded-2xl">
+                    <p className="font-medium">Deal #{fav.deal_id}</p>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <Heart className="w-12 h-12 text-gray-300 dark:text-gray-700 mx-auto mb-4" />
+                <p className="text-gray-600 dark:text-gray-400">Your favorite deals will appear here</p>
+              </div>
+            )
           )}
 
           {activeTab === 'history' && (
-            <div className="space-y-3">
-              {recentHistory.map((item) => (
-                <div key={item.id} className="p-4 glass rounded-2xl">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <h4 className="font-semibold text-gray-900 dark:text-gray-100">{item.restaurant}</h4>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">{item.deal}</p>
-                      <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">{item.date}</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-semibold text-green-600 dark:text-green-400">
-                        Saved ${item.saved.toFixed(2)}
-                      </p>
+            loading ? (
+              <div className="text-center py-8">
+                <div className="w-8 h-8 border-2 border-rose-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
+              </div>
+            ) : dealHistory.length > 0 ? (
+              <div className="space-y-3">
+                {dealHistory.map((item) => (
+                  <div key={item.id} className="p-4 glass rounded-2xl">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h4 className="font-semibold text-gray-900 dark:text-gray-100">Deal #{item.deal_id}</h4>
+                        <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
+                          {new Date(item.redeemed_at).toLocaleDateString()}
+                        </p>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <p className="text-gray-600 dark:text-gray-400">No deals redeemed yet</p>
+              </div>
+            )
           )}
         </div>
       </div>
