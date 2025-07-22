@@ -16,6 +16,8 @@ export interface Deal {
   end_time: Date;
   active: boolean;
   created_at: Date;
+  quantity_available?: number;
+  quantity_claimed?: number;
 }
 
 export interface Restaurant {

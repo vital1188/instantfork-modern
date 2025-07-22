@@ -36,7 +36,7 @@ export const DealCard: React.FC<DealCardProps> = ({ deal, onClick }) => {
     
     const { data } = await getUserFavorites(user.id);
     if (data) {
-      setIsFavorite(data.some((fav: any) => fav.deal_id === deal.id));
+      setIsFavorite(data.some((fav: { deal_id: string }) => fav.deal_id === deal.id));
     }
   };
 
@@ -162,6 +162,16 @@ export const DealCard: React.FC<DealCardProps> = ({ deal, onClick }) => {
             <div className="flex items-center space-x-1.5 text-sm glass-subtle px-3 py-1.5 rounded-full">
               <MapPin className="w-3.5 h-3.5 text-blue-500" />
               <span className="font-medium text-gray-700 dark:text-gray-300">{distance.toFixed(1)} mi</span>
+            </div>
+          )}
+          
+          {/* Quantity Available */}
+          {deal.quantity_available && (
+            <div className="flex items-center space-x-1.5 text-sm glass-subtle px-3 py-1.5 rounded-full">
+              <TrendingUp className="w-3.5 h-3.5 text-orange-500" />
+              <span className="font-medium text-gray-700 dark:text-gray-300">
+                {Math.max(0, deal.quantity_available - (deal.quantity_claimed || 0))} left
+              </span>
             </div>
           )}
           

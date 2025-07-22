@@ -67,7 +67,9 @@ export const mockDeals: Deal[] = [
     start_time: new Date(),
     end_time: new Date(Date.now() + 4 * 60 * 60 * 1000), // 4 hours from now
     active: true,
-    created_at: new Date()
+    created_at: new Date(),
+    quantity_available: 25,
+    quantity_claimed: 8
   },
   {
     id: '2',
@@ -99,7 +101,9 @@ export const mockDeals: Deal[] = [
     start_time: new Date(),
     end_time: new Date(Date.now() + 2 * 60 * 60 * 1000), // 2 hours from now
     active: true,
-    created_at: new Date()
+    created_at: new Date(),
+    quantity_available: 10,
+    quantity_claimed: 7
   },
   {
     id: '4',

@@ -35,6 +35,8 @@ interface RestaurantDeal {
   image_url?: string;
   tags: string[];
   created_at: string;
+  quantity_available?: number;
+  quantity_claimed?: number;
 }
 
 interface RestaurantProfile {
@@ -631,12 +633,13 @@ function DealFormModal({
   const [formData, setFormData] = useState({
     title: deal?.title || '',
     description: deal?.description || '',
-    original_price: deal?.original_price || 0,
-    deal_price: deal?.deal_price || 0,
-    start_time: deal?.start_time || new Date().toISOString().slice(0, 16),
-    end_time: deal?.end_time || new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().slice(0, 16),
+    original_price: deal?.original_price?.toString() || '',
+    deal_price: deal?.deal_price?.toString() || '',
+    image_url: deal?.image_url || '',
     tags: deal?.tags || [],
-    image_url: deal?.image_url || ''
+    start_time: deal?.start_time ? new Date(deal.start_time).toISOString().slice(0, 16) : '',
+    end_time: deal?.end_time ? new Date(deal.end_time).toISOString().slice(0, 16) : '',
+    quantity_available: deal?.quantity_available?.toString() || ''
   });
 
   const [tagInput, setTagInput] = useState('');
@@ -750,7 +753,7 @@ function DealFormModal({
                 min="0"
                 step="0.01"
                 value={formData.original_price}
-                onChange={(e) => setFormData({ ...formData, original_price: parseFloat(e.target.value) })}
+                onChange={(e) => setFormData({ ...formData, original_price: e.target.value })}
                 className="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-rose-500 dark:bg-gray-800"
               />
             </div>
@@ -764,7 +767,7 @@ function DealFormModal({
                 min="0"
                 step="0.01"
                 value={formData.deal_price}
-                onChange={(e) => setFormData({ ...formData, deal_price: parseFloat(e.target.value) })}
+                onChange={(e) => setFormData({ ...formData, deal_price: e.target.value })}
                 className="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-rose-500 dark:bg-gray-800"
               />
             </div>
@@ -808,6 +811,23 @@ function DealFormModal({
               className="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-rose-500 dark:bg-gray-800"
               placeholder="https://example.com/image.jpg"
             />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Quantity Available
+            </label>
+            <input
+              type="number"
+              min="1"
+              value={formData.quantity_available}
+              onChange={(e) => setFormData({ ...formData, quantity_available: e.target.value })}
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-rose-500 dark:bg-gray-800"
+              placeholder="Leave empty for unlimited"
+            />
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+              Leave empty for unlimited quantity
+            </p>
           </div>
 
           <div>
