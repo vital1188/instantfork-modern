@@ -3,6 +3,7 @@ import { GoogleMap, Marker, InfoWindow, Circle, useLoadScript } from '@react-goo
 import { Deal } from '../types';
 import { useStore } from '../store/useStore';
 import { formatPrice, calculateSavings, calculateDistance } from '../utils/helpers';
+import { MapPin, Navigation, Zap, X } from 'lucide-react';
 
 interface MapViewProps {
   deals: Deal[];
@@ -30,15 +31,243 @@ const options = {
   ]
 };
 
+// Fallback Map Component when Google Maps is not available
+const FallbackMap: React.FC<MapViewProps> = ({ deals }) => {
+  const { userLocation, setSelectedDeal } = useStore();
+  const [selectedDeal, setSelectedDealLocal] = useState<Deal | null>(null);
+
+  const handleDealClick = (deal: Deal) => {
+    setSelectedDealLocal(deal);
+  };
+
+  const handleViewDeal = (deal: Deal) => {
+    setSelectedDeal(deal);
+    setSelectedDealLocal(null);
+  };
+
+  return (
+    <div className="relative w-full h-full bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 overflow-hidden">
+      {/* Background Pattern */}
+      <div className="absolute inset-0 opacity-10">
+        <div className="absolute inset-0" style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23000000' fill-opacity='0.1'%3E%3Ccircle cx='30' cy='30' r='2'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+        }} />
+      </div>
+
+      {/* Header */}
+      <div className="absolute top-4 left-4 right-4 z-10">
+        <div className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm rounded-2xl p-4 shadow-lg border border-gray-200/50 dark:border-gray-700/50">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <div className="p-2 bg-rose-500 rounded-xl">
+                <MapPin className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h2 className="font-semibold text-gray-900 dark:text-gray-100">
+                  {deals.length} Deals Near You
+                </h2>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  {userLocation ? 'Washington DC Area' : 'Select location to see distances'}
+                </p>
+              </div>
+            </div>
+            {userLocation && (
+              <div className="flex items-center space-x-2 text-blue-600 dark:text-blue-400">
+                <Navigation className="w-4 h-4" />
+                <span className="text-sm font-medium">Your Location</span>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Deals Grid */}
+      <div className="absolute inset-0 pt-24 pb-4 px-4 overflow-y-auto">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-w-7xl mx-auto">
+          {deals.map((deal, index) => {
+            const savings = calculateSavings(deal.original_price, deal.deal_price);
+            const distance = userLocation 
+              ? calculateDistance(userLocation.lat, userLocation.lng, deal.location.lat, deal.location.lng)
+              : null;
+
+            return (
+              <div
+                key={deal.id}
+                className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm rounded-2xl shadow-lg border border-gray-200/50 dark:border-gray-700/50 overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer group"
+                onClick={() => handleDealClick(deal)}
+                style={{ animationDelay: `${index * 100}ms` }}
+              >
+                {/* Deal Image */}
+                <div className="relative h-48 overflow-hidden">
+                  <img 
+                    src={deal.image_url} 
+                    alt={deal.title}
+                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                  />
+                  
+                  {/* Gradient Overlay */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
+                  
+                  {/* Savings Badge */}
+                  <div className="absolute top-3 right-3 bg-rose-500 text-white px-3 py-1.5 rounded-xl text-sm font-bold shadow-lg flex items-center space-x-1">
+                    <Zap className="w-3 h-3" />
+                    <span>{savings}% OFF</span>
+                  </div>
+
+                  {/* Location Pin */}
+                  <div className="absolute top-3 left-3 bg-blue-500 text-white p-2 rounded-xl shadow-lg">
+                    <MapPin className="w-4 h-4" />
+                  </div>
+
+                  {/* Distance */}
+                  {distance && (
+                    <div className="absolute bottom-3 left-3 bg-black/50 text-white px-2 py-1 rounded-lg text-xs font-medium">
+                      {distance.toFixed(1)} mi away
+                    </div>
+                  )}
+                </div>
+
+                {/* Deal Content */}
+                <div className="p-4">
+                  <h3 className="font-bold text-lg text-gray-900 dark:text-gray-100 mb-1 line-clamp-1">
+                    {deal.title}
+                  </h3>
+                  <p className="text-gray-600 dark:text-gray-400 text-sm mb-3">
+                    {deal.restaurant.name}
+                  </p>
+                  
+                  {/* Price */}
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-baseline space-x-2">
+                      <span className="text-2xl font-bold text-rose-500">
+                        {formatPrice(deal.deal_price)}
+                      </span>
+                      <span className="text-sm text-gray-500 line-through">
+                        {formatPrice(deal.original_price)}
+                      </span>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xs text-green-600 dark:text-green-400 font-medium">
+                        Save {formatPrice(deal.original_price - deal.deal_price)}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Tags */}
+                  <div className="flex flex-wrap gap-1 mb-4">
+                    {deal.tags.slice(0, 2).map((tag) => (
+                      <span
+                        key={tag}
+                        className="px-2 py-1 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 text-xs rounded-full"
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+
+                  {/* View Deal Button */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleViewDeal(deal);
+                    }}
+                    className="w-full bg-rose-500 hover:bg-rose-600 text-white py-2.5 rounded-xl font-medium transition-colors shadow-lg"
+                  >
+                    View Deal
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {deals.length === 0 && (
+          <div className="flex items-center justify-center h-64">
+            <div className="text-center">
+              <MapPin className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">
+                No deals found
+              </h3>
+              <p className="text-gray-600 dark:text-gray-400">
+                Try adjusting your filters or location
+              </p>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Selected Deal Modal */}
+      {selectedDeal && (
+        <div className="absolute inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto shadow-2xl">
+            <div className="relative">
+              <img 
+                src={selectedDeal.image_url} 
+                alt={selectedDeal.title}
+                className="w-full h-48 object-cover"
+              />
+              <button
+                onClick={() => setSelectedDealLocal(null)}
+                className="absolute top-3 right-3 bg-black/50 text-white p-2 rounded-full hover:bg-black/70 transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            
+            <div className="p-6">
+              <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">
+                {selectedDeal.title}
+              </h3>
+              <p className="text-gray-600 dark:text-gray-400 mb-4">
+                {selectedDeal.restaurant.name}
+              </p>
+              
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-baseline space-x-2">
+                  <span className="text-3xl font-bold text-rose-500">
+                    {formatPrice(selectedDeal.deal_price)}
+                  </span>
+                  <span className="text-lg text-gray-500 line-through">
+                    {formatPrice(selectedDeal.original_price)}
+                  </span>
+                </div>
+              </div>
+
+              <p className="text-gray-600 dark:text-gray-400 mb-6 text-sm leading-relaxed">
+                {selectedDeal.description}
+              </p>
+
+              <div className="flex space-x-3">
+                <button
+                  onClick={() => setSelectedDealLocal(null)}
+                  className="flex-1 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 py-3 rounded-xl font-medium hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                >
+                  Close
+                </button>
+                <button
+                  onClick={() => handleViewDeal(selectedDeal)}
+                  className="flex-1 bg-rose-500 hover:bg-rose-600 text-white py-3 rounded-xl font-medium transition-colors shadow-lg"
+                >
+                  View Full Deal
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 export const MapView: React.FC<MapViewProps> = ({ deals }) => {
   const { userLocation, setSelectedDeal, filters } = useStore();
   const [map, setMap] = useState<google.maps.Map | null>(null);
   const [selectedMarker, setSelectedMarker] = useState<Deal | null>(null);
   const [hoveredMarkerId, setHoveredMarkerId] = useState<string | null>(null);
-  const center = userLocation || { lat: 40.7128, lng: -74.0060 };
+  const center = userLocation || { lat: 38.9072, lng: -77.0369 }; // Default to Washington DC
   
   const { isLoaded, loadError } = useLoadScript({
-    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY,
+    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '',
   });
 
   const onLoad = useCallback((map: google.maps.Map) => {
@@ -120,23 +349,17 @@ export const MapView: React.FC<MapViewProps> = ({ deals }) => {
     };
   }, [isLoaded]);
 
-  if (loadError) {
-    return (
-      <div className="flex items-center justify-center h-full bg-gray-100">
-        <div className="text-center">
-          <p className="text-red-600 mb-2">Error loading maps</p>
-          <p className="text-sm text-gray-600">Please check your internet connection and try again.</p>
-        </div>
-      </div>
-    );
+  // If Google Maps fails to load or no API key, show fallback
+  if (loadError || !import.meta.env.VITE_GOOGLE_MAPS_API_KEY) {
+    return <FallbackMap deals={deals} />;
   }
 
   if (!isLoaded) {
     return (
-      <div className="flex items-center justify-center h-full bg-gray-100">
+      <div className="flex items-center justify-center h-full bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-500 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading map...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-rose-500 mx-auto"></div>
+          <p className="mt-4 text-gray-600 dark:text-gray-400">Loading map...</p>
         </div>
       </div>
     );

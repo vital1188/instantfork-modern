@@ -5,6 +5,8 @@ import { formatPrice, calculateSavings, getTimeRemaining, calculateDistance } fr
 import { useStore } from '../store/useStore';
 import { useAuth } from '../contexts/AuthContext';
 import { addFavorite, removeFavorite, getUserFavorites } from '../lib/supabase';
+import { claimDeal, ClaimedDeal } from '../lib/dealClaimHelpers';
+import { QRCodeModal } from './QRCodeModal';
 
 interface DealCardProps {
   deal: Deal;
@@ -16,6 +18,9 @@ export const DealCard: React.FC<DealCardProps> = ({ deal, onClick }) => {
   const { user } = useAuth();
   const [isFavorite, setIsFavorite] = useState(false);
   const [isLoadingFavorite, setIsLoadingFavorite] = useState(false);
+  const [isClaimingDeal, setIsClaimingDeal] = useState(false);
+  const [claimedDeal, setClaimedDeal] = useState<ClaimedDeal | null>(null);
+  const [showQRModal, setShowQRModal] = useState(false);
   
   const savings = calculateSavings(deal.original_price, deal.deal_price);
   const timeRemaining = getTimeRemaining(deal.end_time);
@@ -61,6 +66,45 @@ export const DealCard: React.FC<DealCardProps> = ({ deal, onClick }) => {
       console.error('Error toggling favorite:', error);
     } finally {
       setIsLoadingFavorite(false);
+    }
+  };
+
+  const handleClaimDeal = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    if (!user) {
+      // Could show auth modal here
+      return;
+    }
+
+    setIsClaimingDeal(true);
+    try {
+      const result = await claimDeal(deal.id);
+      
+      if (result.success && result.qr_data) {
+        // Create a ClaimedDeal object for the modal
+        const newClaimedDeal: ClaimedDeal = {
+          id: result.claimed_deal_id || '',
+          user_id: user.id,
+          deal_id: deal.id,
+          restaurant_id: deal.restaurant.id,
+          claim_code: result.claim_code || '',
+          claimed_at: new Date().toISOString(),
+          expires_at: result.expires_at || '',
+          status: 'active',
+          qr_data: result.qr_data
+        };
+        
+        setClaimedDeal(newClaimedDeal);
+        setShowQRModal(true);
+      } else {
+        alert(result.error || 'Failed to claim deal');
+      }
+    } catch (error) {
+      console.error('Error claiming deal:', error);
+      alert('Failed to claim deal. Please try again.');
+    } finally {
+      setIsClaimingDeal(false);
     }
   };
 
@@ -182,13 +226,33 @@ export const DealCard: React.FC<DealCardProps> = ({ deal, onClick }) => {
           </div>
         </div>
 
-        {/* Hover Action */}
-        <div className="absolute inset-x-5 bottom-5 opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0 transition-all duration-300 pointer-events-none">
-          <div className="btn-primary w-full text-center text-sm py-2.5 shadow-glow">
-            View Deal Details
-          </div>
+        {/* Claim Deal Button */}
+        <div className="mt-4">
+          <button
+            onClick={handleClaimDeal}
+            disabled={isClaimingDeal || !user}
+            className="w-full btn-primary py-3 text-sm font-semibold shadow-glow disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isClaimingDeal ? (
+              <div className="flex items-center justify-center space-x-2">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                <span>Claiming...</span>
+              </div>
+            ) : !user ? (
+              'Sign in to Claim'
+            ) : (
+              'Claim Deal'
+            )}
+          </button>
         </div>
       </div>
+
+      {/* QR Code Modal */}
+      <QRCodeModal
+        isOpen={showQRModal}
+        onClose={() => setShowQRModal(false)}
+        claimedDeal={claimedDeal}
+      />
     </div>
   );
 };

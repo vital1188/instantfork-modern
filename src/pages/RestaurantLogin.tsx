@@ -44,23 +44,25 @@ export function RestaurantLogin() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center px-4">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center px-3 sm:px-4 py-8">
       <div className="max-w-md w-full">
         {/* Logo and Title */}
-        <div className="text-center mb-8">
+        <div className="text-center mb-6 sm:mb-8">
           <div className="flex justify-center mb-4">
-            <Store className="w-12 h-12 text-rose-500" />
+            <div className="p-3 bg-rose-100 dark:bg-rose-900/20 rounded-2xl">
+              <Store className="w-10 h-10 sm:w-12 sm:h-12 text-rose-500" />
+            </div>
           </div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100">
             Restaurant Login
           </h1>
-          <p className="mt-2 text-gray-600 dark:text-gray-400">
+          <p className="mt-2 text-sm sm:text-base text-gray-600 dark:text-gray-400">
             Sign in to manage your restaurant and deals
           </p>
         </div>
 
         {/* Login Form */}
-        <div className="bg-white dark:bg-gray-900 rounded-lg shadow-sm border border-gray-200 dark:border-gray-800 p-6">
+        <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-800 p-4 sm:p-6">
           {error && (
             <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg flex items-center space-x-2">
               <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400" />

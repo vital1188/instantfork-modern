@@ -15,11 +15,13 @@ import {
   Mail,
   Globe,
   Save,
-  X
+  X,
+  QrCode
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { useAuthContext } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
+import { QRScanner } from '../components/QRScanner';
 
 interface RestaurantDeal {
   id: string;
@@ -67,6 +69,7 @@ export function RestaurantDashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [showDealModal, setShowDealModal] = useState(false);
   const [editingDeal, setEditingDeal] = useState<RestaurantDeal | null>(null);
+  const [showQRScanner, setShowQRScanner] = useState(false);
 
   useEffect(() => {
     if (!user) {
@@ -151,31 +154,33 @@ export function RestaurantDashboard() {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
       {/* Header */}
-      <header className="bg-white dark:bg-gray-900 shadow-sm border-b border-gray-200 dark:border-gray-800">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-              Restaurant Dashboard
+      <header className="bg-white dark:bg-gray-900 shadow-sm border-b border-gray-200 dark:border-gray-800 sticky top-0 z-30">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-14 sm:h-16">
+            <h1 className="text-lg sm:text-2xl font-bold text-gray-900 dark:text-gray-100 truncate">
+              <span className="hidden sm:inline">Restaurant Dashboard</span>
+              <span className="sm:hidden">Dashboard</span>
             </h1>
             <button
               onClick={() => navigate('/')}
-              className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100"
+              className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 text-sm sm:text-base px-2 py-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
             >
-              View Public Site
+              <span className="hidden sm:inline">View Public Site</span>
+              <span className="sm:hidden">Public</span>
             </button>
           </div>
         </div>
       </header>
 
       {/* Tabs */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 mt-4 sm:mt-6">
         <div className="border-b border-gray-200 dark:border-gray-800">
-          <nav className="-mb-px flex space-x-8">
+          <nav className="-mb-px flex">
             {(['deals', 'profile', 'analytics'] as const).map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`py-2 px-1 border-b-2 font-medium text-sm capitalize transition-colors ${
+                className={`flex-1 sm:flex-none py-3 sm:py-2 px-1 sm:px-4 border-b-2 font-medium text-sm capitalize transition-colors text-center ${
                   activeTab === tab
                     ? 'border-rose-500 text-rose-600 dark:text-rose-400'
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
@@ -189,23 +194,34 @@ export function RestaurantDashboard() {
       </div>
 
       {/* Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8">
         {activeTab === 'deals' && (
           <div>
-            <div className="flex justify-between items-center mb-6">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
               <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
                 Your Deals
               </h2>
-              <button
-                onClick={() => {
-                  setEditingDeal(null);
-                  setShowDealModal(true);
-                }}
-                className="flex items-center space-x-2 px-4 py-2 bg-rose-500 text-white rounded-lg hover:bg-rose-600 transition-colors"
-              >
-                <Plus className="w-5 h-5" />
-                <span>Add New Deal</span>
-              </button>
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
+                <button
+                  onClick={() => setShowQRScanner(true)}
+                  className="flex items-center justify-center space-x-2 px-4 py-3 sm:py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors font-medium"
+                >
+                  <QrCode className="w-5 h-5" />
+                  <span className="hidden sm:inline">Scan QR Code</span>
+                  <span className="sm:hidden">Scan QR</span>
+                </button>
+                <button
+                  onClick={() => {
+                    setEditingDeal(null);
+                    setShowDealModal(true);
+                  }}
+                  className="flex items-center justify-center space-x-2 px-4 py-3 sm:py-2 bg-rose-500 text-white rounded-lg hover:bg-rose-600 transition-colors font-medium"
+                >
+                  <Plus className="w-5 h-5" />
+                  <span className="hidden sm:inline">Add New Deal</span>
+                  <span className="sm:hidden">Add Deal</span>
+                </button>
+              </div>
             </div>
 
             {deals.length === 0 ? (
@@ -331,6 +347,15 @@ export function RestaurantDashboard() {
             setShowDealModal(false);
             setEditingDeal(null);
           }}
+        />
+      )}
+
+      {/* QR Scanner Modal */}
+      {showQRScanner && (
+        <QRScanner
+          isOpen={showQRScanner}
+          onClose={() => setShowQRScanner(false)}
+          restaurantId={profile?.id}
         />
       )}
     </div>

@@ -6,7 +6,6 @@ import {
   Lock, 
   User, 
   Phone, 
-  MapPin, 
   Globe, 
   FileText,
   ArrowRight,
@@ -16,6 +15,7 @@ import {
 import { useAuthContext } from '../contexts/AuthContext';
 import { createRestaurant } from '../lib/restaurantHelpers';
 import { supabase } from '../lib/supabase';
+import { LocationSelector } from '../components/LocationSelector';
 
 interface FormData {
   // Account Info
@@ -35,6 +35,7 @@ interface FormData {
   city: string;
   state: string;
   zipCode: string;
+  coordinates: { lat: number; lng: number };
   
   // Optional
   website?: string;
@@ -63,6 +64,7 @@ export function RestaurantRegister() {
     city: '',
     state: '',
     zipCode: '',
+    coordinates: { lat: 0, lng: 0 },
     website: '',
     agreeToTerms: false
   });
@@ -124,6 +126,23 @@ export function RestaurantRegister() {
     setError(null);
   };
 
+  const handleLocationSelect = (location: {
+    address: string;
+    city: string;
+    state: string;
+    zipCode: string;
+    coordinates: { lat: number; lng: number };
+  }) => {
+    setFormData({
+      ...formData,
+      address: location.address,
+      city: location.city,
+      state: location.state,
+      zipCode: location.zipCode,
+      coordinates: location.coordinates
+    });
+  };
+
   const handleSubmit = async () => {
     if (!validateStep(4)) return;
     
@@ -155,10 +174,7 @@ export function RestaurantRegister() {
         phone: formData.phone,
         email: formData.email,
         website: formData.website,
-        location: {
-          lat: 0, // You would normally geocode the address here
-          lng: 0
-        }
+        location: formData.coordinates
       });
 
       if (restaurantError) {
@@ -179,31 +195,52 @@ export function RestaurantRegister() {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
       {/* Header */}
-      <header className="bg-white dark:bg-gray-900 shadow-sm border-b border-gray-200 dark:border-gray-800">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-3">
-              <Store className="w-8 h-8 text-rose-500" />
-              <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">
-                Restaurant Registration
+      <header className="bg-white dark:bg-gray-900 shadow-sm border-b border-gray-200 dark:border-gray-800 sticky top-0 z-40">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-14 sm:h-16">
+            <div className="flex items-center space-x-2 sm:space-x-3">
+              <Store className="w-6 h-6 sm:w-8 sm:h-8 text-rose-500" />
+              <h1 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-gray-100 truncate">
+                <span className="hidden sm:inline">Restaurant Registration</span>
+                <span className="sm:hidden">Register</span>
               </h1>
             </div>
             <button
               onClick={() => navigate('/')}
-              className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100"
+              className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 text-sm sm:text-base px-2 py-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
             >
-              Back to Home
+              <span className="hidden sm:inline">Back to Home</span>
+              <span className="sm:hidden">Home</span>
             </button>
           </div>
         </div>
       </header>
 
-      <div className="max-w-3xl mx-auto px-4 py-8">
+      <div className="max-w-4xl mx-auto px-3 sm:px-4 lg:px-8 py-4 sm:py-8">
         {/* Progress Steps */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between">
+        <div className="mb-6 sm:mb-8">
+          {/* Mobile Progress */}
+          <div className="sm:hidden">
+            <div className="flex items-center justify-between mb-4">
+              <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                Step {currentStep} of {steps.length}
+              </div>
+              <div className="text-sm text-gray-500 dark:text-gray-400">
+                {steps[currentStep - 1].title}
+              </div>
+            </div>
+            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+              <div 
+                className="bg-rose-500 h-2 rounded-full transition-all duration-300"
+                style={{ width: `${(currentStep / steps.length) * 100}%` }}
+              />
+            </div>
+          </div>
+
+          {/* Desktop Progress */}
+          <div className="hidden sm:flex items-center justify-between">
             {steps.map((step, index) => (
-              <div key={step.number} className="flex items-center">
+              <div key={step.number} className="flex items-center flex-1">
                 <div className={`flex items-center justify-center w-10 h-10 rounded-full border-2 transition-colors ${
                   currentStep > step.number 
                     ? 'bg-rose-500 border-rose-500 text-white'
@@ -217,7 +254,7 @@ export function RestaurantRegister() {
                     step.number
                   )}
                 </div>
-                <div className={`ml-3 ${index === steps.length - 1 ? 'hidden sm:block' : ''}`}>
+                <div className="ml-3 flex-1">
                   <p className={`text-sm font-medium ${
                     currentStep >= step.number ? 'text-gray-900 dark:text-gray-100' : 'text-gray-500'
                   }`}>
@@ -243,7 +280,7 @@ export function RestaurantRegister() {
         )}
 
         {/* Form Steps */}
-        <div className="bg-white dark:bg-gray-900 rounded-lg shadow-sm border border-gray-200 dark:border-gray-800 p-6">
+        <div className="bg-white dark:bg-gray-900 rounded-lg shadow-sm border border-gray-200 dark:border-gray-800 p-4 sm:p-6">
           {currentStep === 1 && (
             <div className="space-y-6">
               <h2 className="text-2xl font-semibold text-gray-900 dark:text-gray-100 mb-6">
@@ -379,78 +416,42 @@ export function RestaurantRegister() {
 
           {currentStep === 3 && (
             <div className="space-y-6">
-              <h2 className="text-2xl font-semibold text-gray-900 dark:text-gray-100 mb-6">
-                Location Information
-              </h2>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  <MapPin className="w-4 h-4 inline mr-1" />
-                  Street Address
-                </label>
-                <input
-                  type="text"
-                  value={formData.address}
-                  onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-rose-500 dark:bg-gray-800"
-                  placeholder="123 Main Street"
-                />
-              </div>
+              <LocationSelector
+                onLocationSelect={handleLocationSelect}
+                initialAddress={formData.address}
+                initialCity={formData.city}
+                initialState={formData.state}
+                initialZipCode={formData.zipCode}
+              />
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    City
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.city}
-                    onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-rose-500 dark:bg-gray-800"
-                    placeholder="New York"
-                  />
+              {/* Website field after location selection */}
+              {(formData.city || formData.address) && (
+                <div className="pt-6 border-t border-gray-200 dark:border-gray-700">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      <Globe className="w-4 h-4 inline mr-1" />
+                      Website (Optional)
+                    </label>
+                    <input
+                      type="url"
+                      value={formData.website}
+                      onChange={(e) => setFormData({ ...formData, website: e.target.value })}
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-rose-500 dark:bg-gray-800"
+                      placeholder="https://www.example.com"
+                    />
+                  </div>
+
+                  {/* Show selected location summary */}
+                  <div className="mt-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                    <h4 className="font-medium text-gray-900 dark:text-gray-100 mb-2">Selected Location</h4>
+                    <div className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
+                      {formData.address && <p>Address: {formData.address}</p>}
+                      <p>City: {formData.city}, {formData.state}</p>
+                      {formData.zipCode && <p>ZIP: {formData.zipCode}</p>}
+                    </div>
+                  </div>
                 </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    State
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.state}
-                    onChange={(e) => setFormData({ ...formData, state: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-rose-500 dark:bg-gray-800"
-                    placeholder="NY"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  ZIP Code
-                </label>
-                <input
-                  type="text"
-                  value={formData.zipCode}
-                  onChange={(e) => setFormData({ ...formData, zipCode: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-rose-500 dark:bg-gray-800"
-                  placeholder="10001"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  <Globe className="w-4 h-4 inline mr-1" />
-                  Website (Optional)
-                </label>
-                <input
-                  type="url"
-                  value={formData.website}
-                  onChange={(e) => setFormData({ ...formData, website: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-rose-500 dark:bg-gray-800"
-                  placeholder="https://www.example.com"
-                />
-              </div>
+              )}
             </div>
           )}
 
@@ -501,11 +502,11 @@ export function RestaurantRegister() {
           )}
 
           {/* Navigation Buttons */}
-          <div className="flex justify-between mt-8">
+          <div className="flex flex-col sm:flex-row justify-between gap-3 sm:gap-0 mt-8">
             {currentStep > 1 && (
               <button
                 onClick={handleBack}
-                className="px-6 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg"
+                className="w-full sm:w-auto px-6 py-3 sm:py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors font-medium"
               >
                 Back
               </button>
@@ -514,7 +515,7 @@ export function RestaurantRegister() {
             {currentStep < 4 ? (
               <button
                 onClick={handleNext}
-                className="ml-auto flex items-center space-x-2 px-6 py-2 bg-rose-500 text-white rounded-lg hover:bg-rose-600"
+                className="w-full sm:w-auto sm:ml-auto flex items-center justify-center space-x-2 px-6 py-3 sm:py-2 bg-rose-500 text-white rounded-lg hover:bg-rose-600 transition-colors font-medium shadow-lg"
               >
                 <span>Next</span>
                 <ArrowRight className="w-4 h-4" />
@@ -523,17 +524,19 @@ export function RestaurantRegister() {
               <button
                 onClick={handleSubmit}
                 disabled={isLoading}
-                className="ml-auto flex items-center space-x-2 px-6 py-2 bg-rose-500 text-white rounded-lg hover:bg-rose-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full sm:w-auto sm:ml-auto flex items-center justify-center space-x-2 px-6 py-3 sm:py-2 bg-rose-500 text-white rounded-lg hover:bg-rose-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium shadow-lg"
               >
                 {isLoading ? (
                   <>
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                    <span>Creating Account...</span>
+                    <span className="hidden sm:inline">Creating Account...</span>
+                    <span className="sm:hidden">Creating...</span>
                   </>
                 ) : (
                   <>
                     <Check className="w-4 h-4" />
-                    <span>Complete Registration</span>
+                    <span className="hidden sm:inline">Complete Registration</span>
+                    <span className="sm:hidden">Complete</span>
                   </>
                 )}
               </button>

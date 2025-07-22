@@ -395,12 +395,11 @@ function App() {
         onClose={() => setIsFilterOpen(false)} 
       />
 
-      {selectedDeal && (
-        <DealModal 
-          deal={selectedDeal} 
-          onClose={() => setSelectedDeal(null)} 
-        />
-      )}
+      <DealModal 
+        deal={selectedDeal} 
+        isOpen={!!selectedDeal}
+        onClose={() => setSelectedDeal(null)} 
+      />
     </div>
   );
 }
