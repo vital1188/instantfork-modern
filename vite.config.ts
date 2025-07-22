@@ -11,5 +11,16 @@ export default defineConfig({
     allowedHosts: [
       '.csb.app'           
     ]
+  },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom'],
+          router: ['react-router-dom'],
+          ui: ['lucide-react']
+        }
+      }
+    }
   }
 })

@@ -1,0 +1,13 @@
+# Netlify redirects for SPA routing
+# This ensures that all routes are handled by the React app
+/*    /index.html   200
+
+# API redirects (if needed)
+/api/*  https://your-api-domain.com/api/:splat  200
+
+# Security headers
+/*
+  X-Frame-Options: DENY
+  X-Content-Type-Options: nosniff
+  X-XSS-Protection: 1; mode=block
+  Referrer-Policy: strict-origin-when-cross-origin
