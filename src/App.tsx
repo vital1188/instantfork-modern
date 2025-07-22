@@ -12,6 +12,9 @@ import { useStore } from './store/useStore';
 import { mockDeals } from './utils/mockData';
 import { calculateDistance } from './utils/helpers';
 import { differenceInHours } from 'date-fns';
+import { fetchRestaurantDeals } from './lib/dealsHelpers';
+import { isSupabaseConfigured } from './lib/supabase';
+import { isWithinDMV, getNearestDMVLocation } from './config/locations';
 
 function App() {
   const { 
@@ -19,12 +22,14 @@ function App() {
     setDeals, 
     viewMode, 
     setViewMode,
-    filters, 
+    filters,
+    setFilters, 
     selectedDeal, 
     setSelectedDeal,
     userLocation,
     setUserLocation,
-    setUser
+    setUser,
+    searchQuery
   } = useStore();
   
   const [isFilterOpen, setIsFilterOpen] = useState(false);
@@ -37,11 +42,19 @@ function App() {
     if ('geolocation' in navigator) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
-          setUserLocation({
-            lat: position.coords.latitude,
-            lng: position.coords.longitude
-          });
-          setLocationError(null);
+          const lat = position.coords.latitude;
+          const lng = position.coords.longitude;
+          
+          // Check if location is within DMV area
+          if (isWithinDMV(lat, lng)) {
+            setUserLocation({ lat, lng });
+            setLocationError(null);
+          } else {
+            // If outside DMV, use nearest DMV location
+            const nearestLocation = getNearestDMVLocation(lat, lng);
+            setUserLocation(nearestLocation.coordinates);
+            setLocationError(`Location adjusted to ${nearestLocation.name}, ${nearestLocation.state} (nearest DMV area)`);
+          }
         },
         (error) => {
           console.error('Error getting location:', error);
@@ -60,8 +73,8 @@ function App() {
           }
           
           setLocationError(errorMessage);
-          // Default to NYC
-          setUserLocation({ lat: 40.7128, lng: -74.0060 });
+          // Default to Washington DC
+          setUserLocation({ lat: 38.9072, lng: -77.0369 });
         },
         {
           enableHighAccuracy: true,
@@ -71,8 +84,8 @@ function App() {
       );
     } else {
       setLocationError('Geolocation is not supported by your browser.');
-      // Default to NYC
-      setUserLocation({ lat: 40.7128, lng: -74.0060 });
+      // Default to Washington DC
+      setUserLocation({ lat: 38.9072, lng: -77.0369 });
     }
 
     // Set mock user
@@ -90,17 +103,58 @@ function App() {
     });
 
     // Load deals
-    setDeals(mockDeals);
-    setIsLoading(false);
+    const loadDeals = async () => {
+      try {
+        // Start with mock deals
+        let allDeals = [...mockDeals];
+        
+        // If Supabase is configured, fetch restaurant deals
+        if (isSupabaseConfigured) {
+          console.log('Supabase is configured, fetching restaurant deals...');
+          const restaurantDeals = await fetchRestaurantDeals();
+          console.log('Restaurant deals fetched:', restaurantDeals);
+          
+          // Combine mock deals with restaurant deals
+          allDeals = [...mockDeals, ...restaurantDeals];
+          console.log('Total deals:', allDeals.length, '(Mock:', mockDeals.length, ', Restaurant:', restaurantDeals.length, ')');
+        } else {
+          console.log('Supabase not configured, using only mock deals');
+        }
+        
+        setDeals(allDeals);
+      } catch (error) {
+        console.error('Error loading deals:', error);
+        // Fall back to mock deals if there's an error
+        setDeals(mockDeals);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    loadDeals();
   }, [setDeals, setUserLocation, setUser]);
 
-  // Filter deals based on current filters
+  // Filter deals based on current filters and search query
   const filteredDeals = deals.filter(deal => {
+    // Search filter
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      const matchesSearch = 
+        deal.title.toLowerCase().includes(query) ||
+        deal.restaurant.name.toLowerCase().includes(query) ||
+        deal.restaurant.category.toLowerCase().includes(query) ||
+        deal.description.toLowerCase().includes(query) ||
+        deal.tags.some(tag => tag.toLowerCase().includes(query)) ||
+        deal.restaurant.location?.address?.toLowerCase().includes(query);
+      
+      if (!matchesSearch) return false;
+    }
+
     // Price filter
     if (deal.deal_price > filters.priceRange[1]) return false;
 
     // Distance filter
-    if (userLocation) {
+    if (userLocation && deal.location && deal.location.lat && deal.location.lng) {
       const distance = calculateDistance(
         userLocation.lat, 
         userLocation.lng, 
@@ -175,21 +229,43 @@ function App() {
             <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Browse by Category</h3>
             <div className="grid grid-cols-3 sm:grid-cols-6 gap-4">
               {[
-                { icon: Pizza, name: 'Pizza', color: 'text-orange-500' },
-                { icon: Coffee, name: 'Coffee', color: 'text-brown-600' },
-                { icon: Utensils, name: 'Dining', color: 'text-blue-500' },
-                { icon: Wine, name: 'Drinks', color: 'text-purple-500' },
-                { icon: Sandwich, name: 'Fast Food', color: 'text-green-500' },
-                { icon: IceCream, name: 'Desserts', color: 'text-pink-500' },
-              ].map((category) => (
-                <button
-                  key={category.name}
-                  className="flex flex-col items-center p-4 glass rounded-2xl hover:bg-white/80 dark:hover:bg-gray-800/80 transition-all duration-200 group"
-                >
-                  <category.icon className={`w-8 h-8 ${category.color} group-hover:scale-110 transition-transform duration-200`} />
-                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300 mt-2">{category.name}</span>
-                </button>
-              ))}
+                { icon: Pizza, name: 'Pizza', category: 'Italian', color: 'text-orange-500' },
+                { icon: Coffee, name: 'Coffee', category: 'Coffee', color: 'text-brown-600' },
+                { icon: Utensils, name: 'Dining', category: 'American', color: 'text-blue-500' },
+                { icon: Wine, name: 'Drinks', category: 'Drinks', color: 'text-purple-500' },
+                { icon: Sandwich, name: 'Fast Food', category: 'Fast Food', color: 'text-green-500' },
+                { icon: IceCream, name: 'Desserts', category: 'Desserts', color: 'text-pink-500' },
+              ].map((category) => {
+                const categoryDeals = deals.filter(deal => 
+                  deal.restaurant.category === category.category || 
+                  deal.tags.some(tag => tag.toLowerCase().includes(category.name.toLowerCase()))
+                );
+                const isActive = filters.cuisine.includes(category.category);
+                
+                return (
+                  <button
+                    key={category.name}
+                    onClick={() => {
+                      if (isActive) {
+                        setFilters({ cuisine: filters.cuisine.filter(c => c !== category.category) });
+                      } else {
+                        setFilters({ cuisine: [...filters.cuisine, category.category] });
+                      }
+                    }}
+                    className={`flex flex-col items-center p-4 glass rounded-2xl transition-all duration-200 group relative ${
+                      isActive ? 'ring-2 ring-rose-500 bg-rose-50/50 dark:bg-rose-900/20' : 'hover:bg-white/80 dark:hover:bg-gray-800/80'
+                    }`}
+                  >
+                    <category.icon className={`w-8 h-8 ${category.color} group-hover:scale-110 transition-transform duration-200`} />
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300 mt-2">{category.name}</span>
+                    {categoryDeals.length > 0 && (
+                      <span className="absolute -top-1 -right-1 bg-rose-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                        {categoryDeals.length}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
             </div>
           </div>
 

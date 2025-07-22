@@ -1,20 +1,27 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Search, X, TrendingUp, Clock, MapPin } from 'lucide-react';
+import { Search, X, TrendingUp, Clock, MapPin, Filter } from 'lucide-react';
 import { useStore } from '../store/useStore';
 import { Deal } from '../types';
+import { DMV_LOCATIONS } from '../config/locations';
 
 export const SearchBar: React.FC = () => {
-  const { deals } = useStore();
-  const [searchQuery, setSearchQuery] = useState('');
+  const { deals, setFilters, filters, userLocation, searchQuery, setSearchQuery } = useStore();
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [searchResults, setSearchResults] = useState<Deal[]>([]);
+  const [selectedSearchType, setSelectedSearchType] = useState<'all' | 'restaurant' | 'cuisine' | 'location'>('all');
   const searchRef = useRef<HTMLDivElement>(null);
 
-  // Recent searches (mock data)
-  const recentSearches = ['Pizza', 'Sushi', 'Burgers', 'Italian'];
+  // Get unique cuisines from deals
+  const cuisines = Array.from(new Set(deals.map(deal => deal.restaurant.category))).sort();
   
-  // Trending searches (mock data)
-  const trendingSearches = ['Happy Hour', 'Brunch Deals', 'Date Night', 'Family Meals'];
+  // Recent searches stored in localStorage
+  const [recentSearches, setRecentSearches] = useState<string[]>(() => {
+    const saved = localStorage.getItem('recentSearches');
+    return saved ? JSON.parse(saved) : ['Pizza', 'Sushi', 'Burgers', 'Italian'];
+  });
+  
+  // Trending searches based on popular tags
+  const trendingSearches = ['Happy Hour', 'Lunch Special', 'Date Night', 'Family Meals', 'Vegan', 'Gluten-Free'];
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -29,27 +36,98 @@ export const SearchBar: React.FC = () => {
 
   useEffect(() => {
     if (searchQuery.trim()) {
-      // Simple search implementation
-      const results = deals.filter(deal => 
-        deal.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        deal.restaurant.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        deal.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()))
-      );
-      setSearchResults(results.slice(0, 5));
+      let results: Deal[] = [];
+      const query = searchQuery.toLowerCase();
+      
+      switch (selectedSearchType) {
+        case 'restaurant':
+          results = deals.filter(deal => 
+            deal.restaurant.name.toLowerCase().includes(query)
+          );
+          break;
+        case 'cuisine':
+          results = deals.filter(deal => 
+            deal.restaurant.category.toLowerCase().includes(query)
+          );
+          break;
+        case 'location':
+          // Search by location/address
+          results = deals.filter(deal => 
+            deal.restaurant.location?.address?.toLowerCase().includes(query) ||
+            DMV_LOCATIONS.some(loc => 
+              loc.name.toLowerCase().includes(query) && 
+              Math.abs(deal.location.lat - loc.coordinates.lat) < 0.1 &&
+              Math.abs(deal.location.lng - loc.coordinates.lng) < 0.1
+            )
+          );
+          break;
+        default:
+          // Search all fields
+          results = deals.filter(deal => 
+            deal.title.toLowerCase().includes(query) ||
+            deal.restaurant.name.toLowerCase().includes(query) ||
+            deal.restaurant.category.toLowerCase().includes(query) ||
+            deal.description.toLowerCase().includes(query) ||
+            deal.tags.some(tag => tag.toLowerCase().includes(query))
+          );
+      }
+      
+      setSearchResults(results.slice(0, 8));
     } else {
       setSearchResults([]);
     }
-  }, [searchQuery, deals]);
+  }, [searchQuery, deals, selectedSearchType]);
 
   const handleSearch = (query: string) => {
     setSearchQuery(query);
+    
+    // Add to recent searches
+    const updatedRecent = [query, ...recentSearches.filter(s => s !== query)].slice(0, 5);
+    setRecentSearches(updatedRecent);
+    localStorage.setItem('recentSearches', JSON.stringify(updatedRecent));
+    
+    // Apply search as filter
+    if (query.trim()) {
+      // Check if it's a cuisine
+      if (cuisines.some(c => c.toLowerCase() === query.toLowerCase())) {
+        setFilters({ cuisine: [query] });
+      }
+      // Check if it's a tag
+      else if (trendingSearches.some(t => t.toLowerCase().includes(query.toLowerCase()))) {
+        // Filter by matching tags
+        const matchingTag = query.toLowerCase();
+        // This would need to be implemented in the main filter logic
+      }
+    }
+    
     setIsSearchFocused(false);
-    // Here you would implement actual search navigation
-    console.log('Searching for:', query);
+  };
+
+  const handleLocationSearch = (location: typeof DMV_LOCATIONS[0]) => {
+    // This would update the user's location to search near that area
+    console.log('Searching near:', location.name);
+    setIsSearchFocused(false);
   };
 
   return (
     <div ref={searchRef} className="relative w-full max-w-2xl mx-auto mb-6">
+      {/* Search Type Selector */}
+      <div className="flex gap-2 mb-3">
+        {(['all', 'restaurant', 'cuisine', 'location'] as const).map((type) => (
+          <button
+            key={type}
+            onClick={() => setSelectedSearchType(type)}
+            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+              selectedSearchType === type
+                ? 'bg-rose-500 text-white'
+                : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
+            }`}
+          >
+            {type.charAt(0).toUpperCase() + type.slice(1)}
+          </button>
+        ))}
+      </div>
+
       {/* Search Input */}
       <div className="relative">
         <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
@@ -60,7 +138,13 @@ export const SearchBar: React.FC = () => {
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           onFocus={() => setIsSearchFocused(true)}
-          placeholder="Search for restaurants, cuisines, or deals..."
+          onKeyPress={(e) => e.key === 'Enter' && searchQuery && handleSearch(searchQuery)}
+          placeholder={
+            selectedSearchType === 'restaurant' ? "Search restaurants..." :
+            selectedSearchType === 'cuisine' ? "Search cuisines (Italian, Mexican, etc.)..." :
+            selectedSearchType === 'location' ? "Search locations in DMV..." :
+            "Search for restaurants, cuisines, or deals..."
+          }
           className="w-full pl-12 pr-12 py-4 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl text-gray-900 dark:text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all duration-200 shadow-sm hover:shadow-md"
         />
         {searchQuery && (
@@ -174,18 +258,54 @@ export const SearchBar: React.FC = () => {
                 <div className="flex items-center space-x-2 mb-3">
                   <MapPin className="w-4 h-4 text-blue-500" />
                   <p className="text-xs text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wider">
-                    Popular Nearby
+                    Popular Locations
                   </p>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
-                  <button className="p-3 text-left hover:bg-gray-50 dark:hover:bg-gray-700 rounded-xl transition-colors">
-                    <p className="font-medium text-sm text-gray-900 dark:text-gray-100">Downtown</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">23 deals</p>
-                  </button>
-                  <button className="p-3 text-left hover:bg-gray-50 dark:hover:bg-gray-700 rounded-xl transition-colors">
-                    <p className="font-medium text-sm text-gray-900 dark:text-gray-100">Midtown</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">18 deals</p>
-                  </button>
+                  {DMV_LOCATIONS.slice(0, 4).map((location) => {
+                    const locationDeals = deals.filter(deal => 
+                      Math.abs(deal.location.lat - location.coordinates.lat) < 0.05 &&
+                      Math.abs(deal.location.lng - location.coordinates.lng) < 0.05
+                    );
+                    return (
+                      <button 
+                        key={location.name}
+                        onClick={() => {
+                          setSelectedSearchType('location');
+                          setSearchQuery(location.name);
+                          handleLocationSearch(location);
+                        }}
+                        className="p-3 text-left hover:bg-gray-50 dark:hover:bg-gray-700 rounded-xl transition-colors"
+                      >
+                        <p className="font-medium text-sm text-gray-900 dark:text-gray-100">{location.name}</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">{locationDeals.length} deals</p>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Cuisines */}
+              <div>
+                <div className="flex items-center space-x-2 mb-3">
+                  <Filter className="w-4 h-4 text-green-500" />
+                  <p className="text-xs text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wider">
+                    Popular Cuisines
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {cuisines.slice(0, 5).map((cuisine) => (
+                    <button
+                      key={cuisine}
+                      onClick={() => {
+                        setSelectedSearchType('cuisine');
+                        handleSearch(cuisine);
+                      }}
+                      className="px-3 py-1.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-full text-sm hover:bg-green-200 dark:hover:bg-green-900/50 transition-colors"
+                    >
+                      {cuisine}
+                    </button>
+                  ))}
                 </div>
               </div>
             </div>

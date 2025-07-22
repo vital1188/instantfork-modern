@@ -19,76 +19,55 @@ This guide will help you set up Supabase authentication for the Instant Fork app
 
 ## Step 2: Set Up Database Tables
 
-Once your project is created, go to the SQL Editor and run these queries:
+Once your project is created, go to the SQL Editor and run the setup scripts:
 
+### Initial Setup (Recommended)
+
+1. Go to the SQL Editor in your Supabase dashboard
+2. Copy the contents of `supabase/fix_restaurant_tables.sql`
+3. Paste it into the SQL Editor
+4. Click "Run"
+
+This script will:
+- Check if tables exist before creating them
+- Create all necessary tables with proper columns
+- Set up Row Level Security policies
+- Create indexes and triggers
+- Verify the setup was successful
+
+### Alternative: Complete Setup (If Starting Fresh)
+
+If you want to drop all existing tables and start fresh:
+1. Copy the contents of `supabase/test_setup.sql`
+2. Paste it into the SQL Editor
+3. Click "Run"
+
+**Warning**: This will drop existing tables if they exist!
+
+### Troubleshooting Table Issues
+
+If you get errors like "Could not find the 'email' column":
+
+1. Run this query to check your table structure:
 ```sql
--- Create profiles table
-CREATE TABLE profiles (
-  id UUID REFERENCES auth.users(id) PRIMARY KEY,
-  full_name TEXT,
-  total_saved DECIMAL DEFAULT 0,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW())
-);
-
--- Create favorites table
-CREATE TABLE favorites (
-  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
-  deal_id TEXT NOT NULL,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()),
-  UNIQUE(user_id, deal_id)
-);
-
--- Create deal_history table
-CREATE TABLE deal_history (
-  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
-  deal_id TEXT NOT NULL,
-  redeemed_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW())
-);
-
--- Set up Row Level Security (RLS)
-ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
-ALTER TABLE favorites ENABLE ROW LEVEL SECURITY;
-ALTER TABLE deal_history ENABLE ROW LEVEL SECURITY;
-
--- Create policies
-CREATE POLICY "Users can view own profile" ON profiles
-  FOR SELECT USING (auth.uid() = id);
-
-CREATE POLICY "Users can update own profile" ON profiles
-  FOR UPDATE USING (auth.uid() = id);
-
-CREATE POLICY "Users can view own favorites" ON favorites
-  FOR SELECT USING (auth.uid() = user_id);
-
-CREATE POLICY "Users can insert own favorites" ON favorites
-  FOR INSERT WITH CHECK (auth.uid() = user_id);
-
-CREATE POLICY "Users can delete own favorites" ON favorites
-  FOR DELETE USING (auth.uid() = user_id);
-
-CREATE POLICY "Users can view own deal history" ON deal_history
-  FOR SELECT USING (auth.uid() = user_id);
-
-CREATE POLICY "Users can insert own deal history" ON deal_history
-  FOR INSERT WITH CHECK (auth.uid() = user_id);
-
--- Create a trigger to automatically create a profile on signup
-CREATE OR REPLACE FUNCTION public.handle_new_user()
-RETURNS trigger AS $$
-BEGIN
-  INSERT INTO public.profiles (id, full_name)
-  VALUES (new.id, new.raw_user_meta_data->>'full_name');
-  RETURN new;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
-
-CREATE TRIGGER on_auth_user_created
-  AFTER INSERT ON auth.users
-  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+SELECT column_name, data_type 
+FROM information_schema.columns
+WHERE table_schema = 'public' 
+AND table_name = 'restaurants'
+ORDER BY ordinal_position;
 ```
+
+2. If the table is missing or has incorrect columns, run `supabase/fix_restaurant_tables.sql`
+
+3. Clear your browser cache and refresh the page
+
+The complete setup includes:
+- User profile tables (profiles, favorites, deal_history)
+- Restaurant tables (restaurants, deals, deal_claims)
+- Row Level Security policies
+- Indexes for performance
+- Triggers for automatic timestamps
+- Views for optimized queries
 
 ## Step 3: Configure Authentication
 

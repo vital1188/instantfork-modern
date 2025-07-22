@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { MapPin, Navigation, X, Loader2, Search } from 'lucide-react';
+import { MapPin, Navigation, X, Loader2, Search, ChevronDown } from 'lucide-react';
 import { useStore } from '../store/useStore';
+import { DMV_LOCATIONS, findDMVLocation, isWithinDMV, getNearestDMVLocation } from '../config/locations';
 
 interface LocationModalProps {
   isOpen: boolean;
@@ -13,6 +14,8 @@ export const LocationModal: React.FC<LocationModalProps> = ({ isOpen, onClose })
   const [address, setAddress] = useState('');
   const [searchInput, setSearchInput] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [filteredLocations, setFilteredLocations] = useState(DMV_LOCATIONS);
 
   // Reverse geocode to get address from coordinates
   useEffect(() => {
@@ -69,34 +72,42 @@ export const LocationModal: React.FC<LocationModalProps> = ({ isOpen, onClose })
     }
   };
 
-  const handleSearchLocation = async () => {
+  // Filter locations based on search input
+  useEffect(() => {
+    if (searchInput.trim()) {
+      const filtered = DMV_LOCATIONS.filter(location => {
+        const searchLower = searchInput.toLowerCase();
+        return location.name.toLowerCase().includes(searchLower) ||
+               location.state.toLowerCase().includes(searchLower) ||
+               `${location.name}, ${location.state}`.toLowerCase().includes(searchLower);
+      });
+      setFilteredLocations(filtered);
+      setShowSuggestions(true);
+    } else {
+      setFilteredLocations(DMV_LOCATIONS);
+      setShowSuggestions(false);
+    }
+  }, [searchInput]);
+
+  const handleLocationSelect = (location: typeof DMV_LOCATIONS[0]) => {
+    setUserLocation(location.coordinates);
+    setSearchInput(`${location.name}, ${location.state}`);
+    setShowSuggestions(false);
+    setError(null);
+  };
+
+  const handleSearchLocation = () => {
     if (!searchInput.trim()) return;
     
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      // Using OpenStreetMap's Nominatim API for geocoding
-      const response = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchInput)}&limit=1`
-      );
-      const data = await response.json();
-      
-      if (data && data.length > 0) {
-        const location = data[0];
-        setUserLocation({
-          lat: parseFloat(location.lat),
-          lng: parseFloat(location.lon)
-        });
-        setSearchInput('');
-      } else {
-        setError('Location not found. Please try a different search.');
-      }
-    } catch (err) {
-      setError('Error searching for location. Please try again.');
-    } finally {
-      setIsLoading(false);
+    // Try to find location in DMV list first
+    const dmvLocation = findDMVLocation(searchInput);
+    if (dmvLocation) {
+      handleLocationSelect(dmvLocation);
+      return;
     }
+    
+    // If not found in DMV locations, show error
+    setError('Please select a location from the DMV area (DC, Maryland, or Northern Virginia)');
   };
 
   if (!isOpen) return null;
@@ -157,28 +168,55 @@ export const LocationModal: React.FC<LocationModalProps> = ({ isOpen, onClose })
           {/* Search Location */}
           <div className="space-y-3">
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Search for a location
+              Search for a location in DMV area
             </label>
-            <div className="flex space-x-2">
-              <input
-                type="text"
-                value={searchInput}
-                onChange={(e) => setSearchInput(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && handleSearchLocation()}
-                placeholder="Enter city, address, or zip code"
-                className="flex-1 px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all"
-              />
-              <button
-                onClick={handleSearchLocation}
-                disabled={isLoading || !searchInput.trim()}
-                className="p-3 bg-gray-100 dark:bg-gray-800 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-              >
-                {isLoading ? (
-                  <Loader2 className="w-5 h-5 animate-spin text-gray-600 dark:text-gray-400" />
-                ) : (
-                  <Search className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-                )}
-              </button>
+            <div className="relative">
+              <div className="flex space-x-2">
+                <input
+                  type="text"
+                  value={searchInput}
+                  onChange={(e) => setSearchInput(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && handleSearchLocation()}
+                  placeholder="Search DC, Maryland, or Northern VA"
+                  className="flex-1 px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all"
+                />
+                <button
+                  onClick={handleSearchLocation}
+                  disabled={isLoading || !searchInput.trim()}
+                  className="p-3 bg-gray-100 dark:bg-gray-800 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                >
+                  {isLoading ? (
+                    <Loader2 className="w-5 h-5 animate-spin text-gray-600 dark:text-gray-400" />
+                  ) : (
+                    <Search className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+                  )}
+                </button>
+              </div>
+              
+              {/* Autocomplete Dropdown */}
+              {showSuggestions && filteredLocations.length > 0 && (
+                <div className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 max-h-60 overflow-y-auto">
+                  {filteredLocations.map((location) => (
+                    <button
+                      key={`${location.name}-${location.state}`}
+                      onClick={() => handleLocationSelect(location)}
+                      className="w-full px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors first:rounded-t-xl last:rounded-b-xl"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="font-medium text-gray-900 dark:text-gray-100">
+                            {location.name}
+                          </p>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">
+                            {location.state}
+                          </p>
+                        </div>
+                        <MapPin className="w-4 h-4 text-gray-400" />
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
 

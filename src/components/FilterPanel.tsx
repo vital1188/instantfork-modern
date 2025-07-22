@@ -37,7 +37,7 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({ isOpen, onClose }) => 
     setFilters({
       cuisine: [],
       priceRange: [0, 100],
-      distance: 5,
+      distance: 50,
       timeLeft: 24,
       dietaryNeeds: []
     });
@@ -91,7 +91,7 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({ isOpen, onClose }) => 
               <input
                 type="range"
                 min="1"
-                max="20"
+                max="100"
                 value={filters.distance}
                 onChange={(e) => setFilters({ distance: parseInt(e.target.value) })}
                 className="w-full"
@@ -99,6 +99,7 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({ isOpen, onClose }) => 
               <div className="flex justify-between text-sm text-gray-600">
                 <span>1 mi</span>
                 <span className="font-semibold">{filters.distance} mi</span>
+                <span>100 mi</span>
               </div>
             </div>
           </div>

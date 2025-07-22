@@ -20,6 +20,9 @@ export const useAuth = () => {
   return context;
 };
 
+// Alias for compatibility
+export const useAuthContext = useAuth;
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);

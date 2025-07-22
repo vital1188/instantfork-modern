@@ -3,66 +3,66 @@ import { Deal, Restaurant } from '../types';
 const restaurants: Restaurant[] = [
   {
     id: '1',
-    name: 'The Rustic Table',
-    location: { lat: 40.7128, lng: -74.0060, address: '123 Main St, New York, NY' },
-    description: 'Farm-to-table dining experience',
+    name: 'The Capital Grille',
+    location: { lat: 38.9047, lng: -77.0368, address: '601 Pennsylvania Ave NW, Washington, DC' },
+    description: 'Upscale steakhouse in the heart of DC',
     category: 'American',
     rating: 4.5,
-    website: 'https://rustictable.com',
-    phone: '(555) 123-4567'
+    website: 'https://capitalgrille.com',
+    phone: '(202) 737-6200'
   },
   {
     id: '2',
-    name: 'Sakura Sushi',
-    location: { lat: 40.7180, lng: -74.0020, address: '456 Broadway, New York, NY' },
-    description: 'Authentic Japanese cuisine',
-    category: 'Japanese',
+    name: 'Bethesda Crab House',
+    location: { lat: 38.9807, lng: -77.0947, address: '4958 Bethesda Ave, Bethesda, MD' },
+    description: 'Fresh Maryland seafood and crab cakes',
+    category: 'Seafood',
     rating: 4.8,
-    website: 'https://sakurasushi.com',
-    phone: '(555) 234-5678'
+    website: 'https://bethesdacrabhouse.com',
+    phone: '(301) 652-3382'
   },
   {
     id: '3',
-    name: 'Bella Italia',
-    location: { lat: 40.7080, lng: -74.0100, address: '789 Park Ave, New York, NY' },
-    description: 'Traditional Italian recipes',
+    name: 'Pupatella',
+    location: { lat: 38.8816, lng: -77.0910, address: '5104 Wilson Blvd, Arlington, VA' },
+    description: 'Authentic Neapolitan pizza',
     category: 'Italian',
     rating: 4.6,
-    website: 'https://bellaitalia.com',
-    phone: '(555) 345-6789'
+    website: 'https://pupatella.com',
+    phone: '(571) 312-7230'
   },
   {
     id: '4',
-    name: 'Taco Fiesta',
-    location: { lat: 40.7200, lng: -74.0000, address: '321 5th Ave, New York, NY' },
-    description: 'Authentic Mexican street food',
+    name: 'Taco Bamba',
+    location: { lat: 38.8823, lng: -77.1711, address: '164 Maple Ave W, Falls Church, VA' },
+    description: 'Creative tacos and Mexican street food',
     category: 'Mexican',
     rating: 4.4,
-    phone: '(555) 456-7890'
+    phone: '(703) 639-0161'
   },
   {
     id: '5',
-    name: 'Green Garden Cafe',
-    location: { lat: 40.7150, lng: -74.0080, address: '654 Green St, New York, NY' },
-    description: 'Vegan and vegetarian delights',
-    category: 'Vegetarian',
+    name: 'Sweetgreen',
+    location: { lat: 38.9097, lng: -77.0434, address: '1512 Connecticut Ave NW, Washington, DC' },
+    description: 'Fresh salads and healthy bowls',
+    category: 'Healthy',
     rating: 4.7,
-    website: 'https://greengarden.com',
-    phone: '(555) 567-8901'
+    website: 'https://sweetgreen.com',
+    phone: '(202) 387-9338'
   }
 ];
 
 export const mockDeals: Deal[] = [
   {
     id: '1',
-    title: '50% Off Farm Fresh Dinner',
+    title: '40% Off Premium Steaks',
     restaurant_id: '1',
     restaurant: restaurants[0],
     image_url: 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=800',
-    original_price: 45,
-    deal_price: 22.50,
-    description: 'Enjoy our signature farm-to-table dinner menu at half price! Includes appetizer, main course, and dessert.',
-    tags: ['dinner', 'farm-to-table', 'limited-time'],
+    original_price: 85,
+    deal_price: 51,
+    description: 'Enjoy our finest cuts at 40% off! Includes choice of ribeye, filet mignon, or NY strip with sides.',
+    tags: ['dinner', 'steak', 'upscale'],
     location: restaurants[0].location,
     start_time: new Date(),
     end_time: new Date(Date.now() + 4 * 60 * 60 * 1000), // 4 hours from now
@@ -71,14 +71,14 @@ export const mockDeals: Deal[] = [
   },
   {
     id: '2',
-    title: 'All-You-Can-Eat Sushi Special',
+    title: 'Maryland Crab Cake Special',
     restaurant_id: '2',
     restaurant: restaurants[1],
     image_url: 'https://images.unsplash.com/photo-1579584425555-c3ce17fd4351?w=800',
-    original_price: 60,
-    deal_price: 35,
-    description: 'Unlimited sushi rolls, sashimi, and appetizers for 90 minutes. Drinks not included.',
-    tags: ['sushi', 'all-you-can-eat', 'dinner'],
+    original_price: 45,
+    deal_price: 28,
+    description: 'Two jumbo lump crab cakes with coleslaw and fries. A true Maryland classic!',
+    tags: ['seafood', 'maryland', 'dinner'],
     location: restaurants[1].location,
     start_time: new Date(),
     end_time: new Date(Date.now() + 6 * 60 * 60 * 1000), // 6 hours from now

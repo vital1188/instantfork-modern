@@ -1,13 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { MapPin, Bell, User, Menu, X, Sparkles, Moon, Sun, LogOut } from 'lucide-react';
+import { MapPin, Bell, User, Menu, X, Sparkles, Moon, Sun, LogOut, Store, Settings } from 'lucide-react';
 import { useStore } from '../store/useStore';
 import { LocationModal } from './LocationModal';
 import { UserProfile } from './UserProfile';
 import { NotificationsPanel } from './NotificationsPanel';
 import { AuthModal } from './AuthModal';
 import { useAuth } from '../contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
+import { getRestaurantByOwner } from '../lib/restaurantHelpers';
 
 export const Header: React.FC = () => {
+  const navigate = useNavigate();
   const { viewMode, setViewMode, userLocation } = useStore();
   const { user, signOut } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -17,6 +20,7 @@ export const Header: React.FC = () => {
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [locationDisplay, setLocationDisplay] = useState('Near you');
+  const [hasRestaurant, setHasRestaurant] = useState(false);
 
   const toggleDarkMode = () => {
     setIsDarkMode(!isDarkMode);
@@ -29,6 +33,20 @@ export const Header: React.FC = () => {
       fetchLocationName(userLocation.lat, userLocation.lng);
     }
   }, [userLocation]);
+
+  // Check if user has a restaurant
+  useEffect(() => {
+    const checkRestaurant = async () => {
+      if (user) {
+        const { data } = await getRestaurantByOwner(user.id);
+        setHasRestaurant(!!data);
+      } else {
+        setHasRestaurant(false);
+      }
+    };
+    
+    checkRestaurant();
+  }, [user]);
 
   const fetchLocationName = async (lat: number, lng: number) => {
     try {
@@ -136,6 +154,39 @@ export const Header: React.FC = () => {
                 </span>
               </button>
 
+              {/* Restaurant Button - Dynamic based on user state */}
+              {!user ? (
+                // Not logged in - show sign in prompt
+                <button 
+                  onClick={() => navigate('/restaurant-login')}
+                  className="flex items-center space-x-2 px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 glass-subtle rounded-xl transition-all duration-200 hover:shadow-lg"
+                  title="Sign in to manage your restaurant"
+                >
+                  <Store className="w-5 h-5" />
+                  <span className="text-sm font-medium hidden lg:inline">For Restaurants</span>
+                </button>
+              ) : hasRestaurant ? (
+                // Has restaurant - go to dashboard
+                <button 
+                  onClick={() => navigate('/restaurant-dashboard')}
+                  className="flex items-center space-x-2 px-4 py-2 gradient-primary text-white rounded-xl transition-all duration-200 hover:shadow-lg"
+                  title="Go to Restaurant Dashboard"
+                >
+                  <Settings className="w-5 h-5" />
+                  <span className="text-sm font-medium hidden lg:inline">Dashboard</span>
+                </button>
+              ) : (
+                // Logged in but no restaurant - show register
+                <button 
+                  onClick={() => navigate('/restaurant-register')}
+                  className="flex items-center space-x-2 px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 glass-subtle rounded-xl transition-all duration-200 hover:shadow-lg"
+                  title="Register Your Restaurant"
+                >
+                  <Store className="w-5 h-5" />
+                  <span className="text-sm font-medium hidden lg:inline">Add Restaurant</span>
+                </button>
+              )}
+
               {user ? (
                 <div className="flex items-center space-x-2">
                   <button 
@@ -197,6 +248,45 @@ export const Header: React.FC = () => {
                 >
                   <MapPin className="w-4 h-4 mr-2 text-rose-500" />
                   <span>{locationDisplay}</span>
+                </button>
+              )}
+              
+              {/* Restaurant Button - Dynamic based on user state */}
+              {!user ? (
+                // Not logged in - show sign in prompt
+                <button
+                  onClick={() => {
+                    navigate('/restaurant-login');
+                    setIsMobileMenuOpen(false);
+                  }}
+                  className="flex items-center text-sm text-gray-600 dark:text-gray-400 px-4 py-2 w-full text-left hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+                >
+                  <Store className="w-4 h-4 mr-2 text-rose-500" />
+                  <span>For Restaurants</span>
+                </button>
+              ) : hasRestaurant ? (
+                // Has restaurant - go to dashboard
+                <button
+                  onClick={() => {
+                    navigate('/restaurant-dashboard');
+                    setIsMobileMenuOpen(false);
+                  }}
+                  className="flex items-center text-sm text-white px-4 py-2 w-full text-left bg-gradient-to-r from-rose-500 to-pink-600 rounded-lg transition-colors"
+                >
+                  <Settings className="w-4 h-4 mr-2" />
+                  <span>Restaurant Dashboard</span>
+                </button>
+              ) : (
+                // Logged in but no restaurant - show register
+                <button
+                  onClick={() => {
+                    navigate('/restaurant-register');
+                    setIsMobileMenuOpen(false);
+                  }}
+                  className="flex items-center text-sm text-gray-600 dark:text-gray-400 px-4 py-2 w-full text-left hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+                >
+                  <Store className="w-4 h-4 mr-2 text-rose-500" />
+                  <span>Add Your Restaurant</span>
                 </button>
               )}
               
