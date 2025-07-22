@@ -15,6 +15,7 @@ import { differenceInHours } from 'date-fns';
 import { fetchRestaurantDeals } from './lib/dealsHelpers';
 import { isSupabaseConfigured } from './lib/supabase';
 import { isWithinDMV, getNearestDMVLocation } from './config/locations';
+import { ServiceUnavailable } from './components/ServiceUnavailable';
 
 function App() {
   const { 
@@ -35,6 +36,7 @@ function App() {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [locationError, setLocationError] = useState<string | null>(null);
+  const [isOutsideDMV, setIsOutsideDMV] = useState(false);
 
   // Initialize app
   useEffect(() => {
@@ -49,11 +51,12 @@ function App() {
           if (isWithinDMV(lat, lng)) {
             setUserLocation({ lat, lng });
             setLocationError(null);
+            setIsOutsideDMV(false);
           } else {
-            // If outside DMV, use nearest DMV location
+            // User is outside DMV area
+            setIsOutsideDMV(true);
             const nearestLocation = getNearestDMVLocation(lat, lng);
             setUserLocation(nearestLocation.coordinates);
-            setLocationError(`Location adjusted to ${nearestLocation.name}, ${nearestLocation.state} (nearest DMV area)`);
           }
         },
         (error) => {
@@ -200,6 +203,19 @@ function App() {
           </div>
         </div>
       </div>
+    );
+  }
+
+  // Show service unavailable message if user is outside DMV area
+  if (isOutsideDMV && !isLoading) {
+    return (
+      <ServiceUnavailable 
+        userLocation={userLocation || undefined}
+        onSelectLocation={(location) => {
+          setUserLocation(location);
+          setIsOutsideDMV(false);
+        }}
+      />
     );
   }
 
