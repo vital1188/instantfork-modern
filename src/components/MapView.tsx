@@ -128,53 +128,31 @@ const FallbackMap: React.FC<MapViewProps> = ({ deals }) => {
                 </div>
 
                 {/* Deal Content */}
-                <div className="p-4">
+                <div className="p-4 space-y-3">
                   <h3 className="font-bold text-lg text-gray-900 dark:text-gray-100 mb-1 line-clamp-1">
                     {deal.title}
                   </h3>
-                  <p className="text-gray-600 dark:text-gray-400 text-sm mb-3">
+                  <p className="text-gray-600 dark:text-gray-400 text-sm">
                     {deal.restaurant.name}
                   </p>
                   
                   {/* Price */}
-                  <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center justify-between">
                     <div className="flex items-baseline space-x-2">
-                      <span className="text-2xl font-bold text-rose-500">
+                      <span className="text-xl font-bold text-rose-500">
                         {formatPrice(deal.deal_price)}
                       </span>
                       <span className="text-sm text-gray-500 line-through">
                         {formatPrice(deal.original_price)}
                       </span>
                     </div>
-                    <div className="text-right">
-                      <p className="text-xs text-green-600 dark:text-green-400 font-medium">
-                        Save {formatPrice(deal.original_price - deal.deal_price)}
-                      </p>
-                    </div>
+                    {distance && (
+                      <div className="flex items-center space-x-1 text-xs text-gray-500 dark:text-gray-400">
+                        <MapPin className="w-3 h-3" />
+                        <span>{distance.toFixed(1)} mi</span>
+                      </div>
+                    )}
                   </div>
-
-                  {/* Tags */}
-                  <div className="flex flex-wrap gap-1 mb-4">
-                    {deal.tags.slice(0, 2).map((tag) => (
-                      <span
-                        key={tag}
-                        className="px-2 py-1 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 text-xs rounded-full"
-                      >
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-
-                  {/* View Deal Button */}
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleViewDeal(deal);
-                    }}
-                    className="w-full bg-rose-500 hover:bg-rose-600 text-white py-2.5 rounded-xl font-medium transition-colors shadow-lg"
-                  >
-                    View Deal
-                  </button>
                 </div>
               </div>
             );

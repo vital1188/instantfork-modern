@@ -67,13 +67,6 @@
   }
 
   /* Modern shadows */
-  .shadow-glow {
-    box-shadow: 0 0 20px rgba(236, 72, 153, 0.3);
-  }
-
-  .shadow-glow-lg {
-    box-shadow: 0 0 40px rgba(236, 72, 153, 0.4);
-  }
 
   /* Text effects */
   .text-gradient {

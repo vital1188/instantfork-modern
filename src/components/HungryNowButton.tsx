@@ -49,13 +49,10 @@ export const HungryNowButton: React.FC = () => {
         className="fixed bottom-6 right-6 group gradient-accent text-white px-6 py-4 rounded-2xl shadow-2xl hover:shadow-glow-lg transform hover:scale-105 transition-all duration-300 flex items-center space-x-3 z-40 overflow-hidden"
       >
         {/* Animated Background */}
-        <div className="absolute inset-0 bg-gradient-to-r from-orange-600 via-red-600 to-pink-600 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-        
         {/* Content */}
-        <div className="relative flex items-center space-x-3">
+        <div className="flex items-center space-x-3">
           <div className="relative">
             <Zap className="w-6 h-6 group-hover:scale-110 transition-transform duration-300" />
-            <Sparkles className="w-4 h-4 absolute -top-1 -right-1 text-yellow-300 animate-pulse" />
           </div>
           <span className="font-bold text-lg">Hungry Now?</span>
           <ArrowRight className="w-5 h-5 transform group-hover:translate-x-1 transition-transform duration-300" />

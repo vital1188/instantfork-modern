@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Copy, Clock, CheckCircle, AlertCircle, Share2, Sparkles } from 'lucide-react';
+import { X, Copy, Clock, CheckCircle, AlertCircle, Share2, Sparkles, QrCode } from 'lucide-react';
 import { ClaimedDeal, getClaimTimeRemaining } from '../lib/dealClaimHelpers';
 
 interface ClaimCodeModalProps {
@@ -20,7 +20,6 @@ export const ClaimCodeModal: React.FC<ClaimCodeModalProps> = ({
     if (isOpen && claimedDeal) {
       updateTimeRemaining();
       
-      // Update time remaining every minute
       const interval = setInterval(updateTimeRemaining, 60000);
       return () => clearInterval(interval);
     }
@@ -73,14 +72,23 @@ export const ClaimCodeModal: React.FC<ClaimCodeModalProps> = ({
   const isRedeemed = claimedDeal.status === 'redeemed';
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-2 sm:p-4">
-      <div className="bg-white dark:bg-gray-900 rounded-2xl w-full max-w-md max-h-[95vh] overflow-y-auto shadow-2xl border border-gray-200 dark:border-gray-700 animate-in fade-in-0 zoom-in-95 duration-300">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
+      <div className="bg-white dark:bg-gray-900 rounded-2xl w-full max-w-md max-h-[95vh] overflow-y-auto shadow-2xl border border-gray-200 dark:border-gray-700">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 flex items-center">
-            <Sparkles className="w-5 h-5 text-rose-500 mr-2" />
-            Deal Claimed!
-          </h2>
+          <div className="flex items-center space-x-2">
+            <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-xl">
+              <CheckCircle className="w-6 h-6 text-green-500" />
+            </div>
+            <div>
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
+                Deal Claimed!
+              </h2>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                Show this code to the restaurant
+              </p>
+            </div>
+          </div>
           <button
             onClick={onClose}
             className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors"
@@ -92,11 +100,11 @@ export const ClaimCodeModal: React.FC<ClaimCodeModalProps> = ({
         {/* Content */}
         <div className="p-6 space-y-6">
           {/* Deal Info */}
-          <div className="text-center">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
+          <div className="text-center space-y-2">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
               {claimedDeal.deal_title || 'Deal Claimed'}
             </h3>
-            <p className="text-gray-600 dark:text-gray-400 mb-2">
+            <p className="text-gray-600 dark:text-gray-400">
               {claimedDeal.restaurant_name || 'Restaurant'}
             </p>
             <div className="flex items-center justify-center space-x-2">
@@ -110,12 +118,12 @@ export const ClaimCodeModal: React.FC<ClaimCodeModalProps> = ({
           </div>
 
           {/* Status */}
-          <div className="flex items-center justify-center space-x-2">
+          <div className="flex items-center justify-center space-x-2 p-3 rounded-lg bg-gray-50 dark:bg-gray-800">
             {isRedeemed ? (
               <>
                 <CheckCircle className="w-5 h-5 text-green-500" />
                 <span className="text-green-600 dark:text-green-400 font-medium">
-                  Redeemed
+                  Redeemed Successfully
                 </span>
               </>
             ) : isExpired ? (
@@ -129,25 +137,33 @@ export const ClaimCodeModal: React.FC<ClaimCodeModalProps> = ({
               <>
                 <Clock className="w-5 h-5 text-orange-500" />
                 <span className="text-orange-600 dark:text-orange-400 font-medium">
-                  {timeRemaining}
+                  Expires in {timeRemaining}
                 </span>
               </>
             )}
           </div>
 
           {/* Claim Code Display */}
-          <div className="bg-gradient-to-br from-rose-50 to-pink-50 dark:from-rose-900/20 dark:to-pink-900/20 rounded-2xl p-6 text-center">
-            <h4 className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-3">
-              Your Claim Code
-            </h4>
-            <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border-2 border-dashed border-rose-300 dark:border-rose-700">
-              <div className="text-4xl font-bold text-gray-900 dark:text-gray-100 tracking-wider font-mono">
+          <div className="bg-gradient-to-br from-rose-50 to-pink-50 dark:from-rose-900/20 dark:to-pink-900/20 rounded-2xl p-6 text-center space-y-4">
+            <div className="flex items-center justify-center space-x-2">
+              <QrCode className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+              <h4 className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                Your Claim Code
+              </h4>
+            </div>
+            
+            <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border-2 border-dashed border-rose-300 dark:border-rose-700">
+              <div className="text-4xl font-bold text-gray-900 dark:text-gray-100 tracking-wider font-mono mb-2">
                 {claimedDeal.claim_code}
               </div>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                Tell this code to the restaurant staff
+              </p>
             </div>
+            
             <button
               onClick={handleCopyCode}
-              className={`mt-4 flex items-center justify-center space-x-2 w-full py-2 px-4 rounded-lg transition-all ${
+              className={`w-full flex items-center justify-center space-x-2 py-3 px-4 rounded-lg transition-all ${
                 copied 
                   ? 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400' 
                   : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
@@ -156,7 +172,7 @@ export const ClaimCodeModal: React.FC<ClaimCodeModalProps> = ({
               {copied ? (
                 <>
                   <CheckCircle className="w-4 h-4" />
-                  <span>Copied!</span>
+                  <span>Copied to Clipboard!</span>
                 </>
               ) : (
                 <>
@@ -169,14 +185,22 @@ export const ClaimCodeModal: React.FC<ClaimCodeModalProps> = ({
 
           {/* Instructions */}
           <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-            <h4 className="font-medium text-blue-900 dark:text-blue-100 mb-2">
+            <h4 className="font-medium text-blue-900 dark:text-blue-100 mb-3 text-sm">
               How to redeem at the restaurant:
             </h4>
-            <ol className="text-sm text-blue-800 dark:text-blue-200 space-y-1">
-              <li>1. Tell the staff: "I have an InstantFork deal"</li>
-              <li>2. Give them your claim code: <span className="font-mono font-bold">{claimedDeal.claim_code}</span></li>
-              <li>3. They'll enter it in their system to verify</li>
-              <li>4. Enjoy your discounted meal!</li>
+            <ol className="text-sm text-blue-800 dark:text-blue-200 space-y-2">
+              <li className="flex items-start space-x-2">
+                <span className="flex-shrink-0 w-5 h-5 bg-blue-500 text-white rounded-full flex items-center justify-center text-xs font-bold">1</span>
+                <span>Tell the staff: "I have an InstantFork deal"</span>
+              </li>
+              <li className="flex items-start space-x-2">
+                <span className="flex-shrink-0 w-5 h-5 bg-blue-500 text-white rounded-full flex items-center justify-center text-xs font-bold">2</span>
+                <span>Give them your code: <span className="font-mono font-bold">{claimedDeal.claim_code}</span></span>
+              </li>
+              <li className="flex items-start space-x-2">
+                <span className="flex-shrink-0 w-5 h-5 bg-blue-500 text-white rounded-full flex items-center justify-center text-xs font-bold">3</span>
+                <span>They'll verify it and apply your discount</span>
+              </li>
             </ol>
           </div>
 
@@ -184,7 +208,7 @@ export const ClaimCodeModal: React.FC<ClaimCodeModalProps> = ({
           <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 space-y-2">
             <div className="flex justify-between text-sm">
               <span className="text-gray-600 dark:text-gray-400">Claim Code:</span>
-              <span className="font-mono text-gray-900 dark:text-gray-100">
+              <span className="font-mono text-gray-900 dark:text-gray-100 font-medium">
                 {claimedDeal.claim_code}
               </span>
             </div>

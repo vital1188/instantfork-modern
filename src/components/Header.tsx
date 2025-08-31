@@ -179,7 +179,7 @@ export const Header: React.FC = () => {
                 // Logged in but no restaurant - show register
                 <button 
                   onClick={() => navigate('/restaurant-register')}
-                  className="flex items-center space-x-2 px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 glass-subtle rounded-xl transition-all duration-200 hover:shadow-lg"
+                  className="flex items-center space-x-2 px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 bg-gray-100 dark:bg-gray-800 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
                   title="Register Your Restaurant"
                 >
                   <Store className="w-5 h-5" />

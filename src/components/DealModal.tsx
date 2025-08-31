@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
-import { X, Clock, MapPin, Tag, Star, Heart, TrendingUp } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, Clock, MapPin, Tag, Star, Heart, TrendingUp, Navigation } from 'lucide-react';
 import { Deal } from '../types';
 import { formatPrice, calculateSavings, getTimeRemaining, calculateDistance } from '../utils/helpers';
 import { useStore } from '../store/useStore';
 import { useAuth } from '../contexts/AuthContext';
-import { addFavorite, removeFavorite } from '../lib/supabase';
+import { addFavorite, removeFavorite, getUserFavorites } from '../lib/supabase';
 import { claimDeal, ClaimedDeal } from '../lib/dealClaimHelpers';
 import { ClaimCodeModal } from './ClaimCodeModal';
 
@@ -23,6 +23,23 @@ export const DealModal: React.FC<DealModalProps> = ({ deal, isOpen, onClose }) =
   const [claimedDeal, setClaimedDeal] = useState<ClaimedDeal | null>(null);
   const [showClaimModal, setShowClaimModal] = useState(false);
 
+  useEffect(() => {
+    if (user && deal) {
+      checkIfFavorite();
+    } else {
+      setIsFavorite(false);
+    }
+  }, [user, deal?.id]);
+
+  const checkIfFavorite = async () => {
+    if (!user || !deal) return;
+    
+    const { data } = await getUserFavorites(user.id);
+    if (data) {
+      setIsFavorite(data.some((fav: { deal_id: string }) => fav.deal_id === deal.id));
+    }
+  };
+
   if (!isOpen || !deal) return null;
 
   const savings = calculateSavings(deal.original_price, deal.deal_price);
@@ -30,10 +47,9 @@ export const DealModal: React.FC<DealModalProps> = ({ deal, isOpen, onClose }) =
   const distance = userLocation 
     ? calculateDistance(userLocation.lat, userLocation.lng, deal.location.lat, deal.location.lng)
     : null;
+  const rating = (4.2 + (parseInt(deal.id.slice(-1)) || 0) * 0.1).toFixed(1);
 
-  const handleFavoriteClick = async (e: React.MouseEvent) => {
-    e.stopPropagation();
-    
+  const handleFavoriteClick = async () => {
     if (!user) return;
 
     setIsLoadingFavorite(true);
@@ -69,7 +85,10 @@ export const DealModal: React.FC<DealModalProps> = ({ deal, isOpen, onClose }) =
           claimed_at: new Date().toISOString(),
           expires_at: result.expires_at || '',
           status: 'active',
-          claim_code: result.claim_code
+          deal_title: deal.title,
+          restaurant_name: deal.restaurant.name,
+          deal_price: deal.deal_price,
+          original_price: deal.original_price
         };
         
         setClaimedDeal(newClaimedDeal);
@@ -85,80 +104,69 @@ export const DealModal: React.FC<DealModalProps> = ({ deal, isOpen, onClose }) =
     }
   };
 
-  // Generate random values for demo
-  const rating = (4 + Math.random()).toFixed(1);
-  const peopleViewing = Math.floor(Math.random() * 20) + 5;
+  const handleGetDirections = () => {
+    if (userLocation) {
+      const directionsUrl = `https://www.google.com/maps/dir/${userLocation.lat},${userLocation.lng}/${deal.location.lat},${deal.location.lng}`;
+      window.open(directionsUrl, '_blank');
+    }
+  };
 
   return (
     <>
-      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9998] p-2 sm:p-4">
-        <div className="bg-white dark:bg-gray-900 rounded-2xl w-full max-w-2xl max-h-[95vh] overflow-y-auto shadow-2xl border border-gray-200 dark:border-gray-700 animate-in fade-in-0 zoom-in-95 duration-300">
-          {/* Header */}
-          <div className="relative">
+      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div className="bg-white dark:bg-gray-900 rounded-2xl w-full max-w-2xl max-h-[95vh] overflow-y-auto shadow-2xl border border-gray-200 dark:border-gray-700">
+          {/* Header Image */}
+          <div className="relative h-64 overflow-hidden">
             <img 
               src={deal.image_url} 
               alt={deal.title}
-              className="w-full h-64 sm:h-80 object-cover"
+              className="w-full h-full object-cover"
             />
             
-            {/* Gradient Overlay */}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
-            
-            {/* Close Button */}
-            <button
-              onClick={onClose}
-              className="absolute top-4 right-4 p-2 bg-black/20 backdrop-blur-sm text-white rounded-full hover:bg-black/40 transition-colors"
-            >
-              <X className="w-5 h-5" />
-            </button>
+            {/* Header Actions */}
+            <div className="absolute top-4 left-4 right-4 flex justify-between items-start">
+              <button
+                onClick={handleFavoriteClick}
+                disabled={isLoadingFavorite || !user}
+                className="p-2 bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm rounded-full shadow-sm hover:bg-white dark:hover:bg-gray-900 transition-colors disabled:opacity-50"
+              >
+                <Heart 
+                  className={`w-5 h-5 transition-colors ${
+                    isFavorite 
+                      ? 'fill-rose-500 text-rose-500' 
+                      : 'text-gray-600 dark:text-gray-400'
+                  } ${isLoadingFavorite ? 'animate-pulse' : ''}`} 
+                />
+              </button>
 
-            {/* Favorite Button */}
-            <button
-              onClick={handleFavoriteClick}
-              disabled={isLoadingFavorite || !user}
-              className="absolute top-4 left-4 p-2 bg-black/20 backdrop-blur-sm rounded-full hover:bg-black/40 transition-colors disabled:opacity-50"
-            >
-              <Heart 
-                className={`w-5 h-5 transition-all duration-300 ${
-                  isFavorite 
-                    ? 'fill-rose-500 text-rose-500' 
-                    : 'text-white hover:text-rose-500'
-                } ${isLoadingFavorite ? 'animate-pulse' : ''}`} 
-              />
-            </button>
-
-            {/* Discount Badge */}
-            <div className="absolute top-4 right-16 bg-rose-500 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-lg flex items-center space-x-1">
-              <TrendingUp className="w-4 h-4" />
-              <span>{savings}% OFF</span>
-            </div>
-
-            {/* Live Indicator */}
-            {peopleViewing > 10 && (
-              <div className="absolute bottom-4 left-4 flex items-center space-x-2 bg-black/20 backdrop-blur-sm px-3 py-1.5 rounded-full text-xs font-medium text-white">
-                <span className="flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
-                </span>
-                <span>{peopleViewing} viewing now</span>
+              <div className="flex items-center space-x-2">
+                <div className="bg-rose-500 text-white px-4 py-2 rounded-full text-sm font-bold shadow-sm">
+                  {savings}% OFF
+                </div>
+                <button
+                  onClick={onClose}
+                  className="p-2 bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm rounded-full shadow-sm hover:bg-white dark:hover:bg-gray-900 transition-colors"
+                >
+                  <X className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+                </button>
               </div>
-            )}
+            </div>
           </div>
 
           {/* Content */}
           <div className="p-6 space-y-6">
             {/* Title and Restaurant */}
-            <div>
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">
-                {deal.title}
-              </h2>
-              <div className="flex items-center justify-between">
-                <p className="text-gray-600 dark:text-gray-400 text-lg">{deal.restaurant.name}</p>
-                <div className="flex items-center space-x-1">
+            <div className="space-y-2">
+              <div className="flex items-start justify-between">
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 flex-1 pr-4">
+                  {deal.title}
+                </h2>
+                <div className="flex items-center space-x-1 flex-shrink-0">
                   <Star className="w-5 h-5 text-yellow-500 fill-yellow-500" />
                   <span className="text-lg font-medium text-gray-700 dark:text-gray-300">{rating}</span>
                 </div>
               </div>
+              <p className="text-gray-600 dark:text-gray-400 text-lg">{deal.restaurant.name}</p>
             </div>
 
             {/* Price Section */}
@@ -167,7 +175,7 @@ export const DealModal: React.FC<DealModalProps> = ({ deal, isOpen, onClose }) =
                 <div>
                   <div className="flex items-baseline space-x-3">
                     <span className="text-4xl font-bold text-rose-500">{formatPrice(deal.deal_price)}</span>
-                    <span className="text-xl text-gray-500 dark:text-gray-400 line-through">{formatPrice(deal.original_price)}</span>
+                    <span className="text-xl line-through text-gray-500 dark:text-gray-400">{formatPrice(deal.original_price)}</span>
                   </div>
                   <p className="text-green-600 dark:text-green-400 font-semibold mt-2">
                     Save {formatPrice(deal.original_price - deal.deal_price)} ({savings}% off)
@@ -186,16 +194,14 @@ export const DealModal: React.FC<DealModalProps> = ({ deal, isOpen, onClose }) =
               </p>
             </div>
 
-            {/* Deal Info */}
+            {/* Deal Info Grid */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-              {/* Time Remaining */}
               <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4 text-center">
                 <Clock className="w-6 h-6 text-rose-500 mx-auto mb-2" />
                 <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{timeRemaining}</p>
                 <p className="text-xs text-gray-500 dark:text-gray-400">remaining</p>
               </div>
               
-              {/* Distance */}
               {distance && (
                 <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4 text-center">
                   <MapPin className="w-6 h-6 text-blue-500 mx-auto mb-2" />
@@ -204,7 +210,6 @@ export const DealModal: React.FC<DealModalProps> = ({ deal, isOpen, onClose }) =
                 </div>
               )}
               
-              {/* Quantity Available */}
               {deal.quantity_available && (
                 <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4 text-center">
                   <TrendingUp className="w-6 h-6 text-orange-500 mx-auto mb-2" />
@@ -215,7 +220,6 @@ export const DealModal: React.FC<DealModalProps> = ({ deal, isOpen, onClose }) =
                 </div>
               )}
               
-              {/* Category */}
               <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4 text-center">
                 <Tag className="w-6 h-6 text-purple-500 mx-auto mb-2" />
                 <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{deal.tags[0]}</p>
@@ -228,37 +232,44 @@ export const DealModal: React.FC<DealModalProps> = ({ deal, isOpen, onClose }) =
               <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">
                 Restaurant Details
               </h3>
-              <div className="space-y-2">
+              <div className="space-y-3">
                 <div className="flex items-center space-x-3">
-                  <MapPin className="w-5 h-5 text-gray-400" />
-                  <span className="text-gray-600 dark:text-gray-400">
-                    {deal.location.lat.toFixed(4)}, {deal.location.lng.toFixed(4)}
+                  <MapPin className="w-5 h-5 text-gray-400 flex-shrink-0" />
+                  <span className="text-gray-600 dark:text-gray-400 text-sm">
+                    {deal.restaurant.location?.address || `${deal.location.lat.toFixed(4)}, ${deal.location.lng.toFixed(4)}`}
                   </span>
                 </div>
                 {deal.restaurant.phone && (
                   <div className="flex items-center space-x-3">
-                    <span className="text-gray-600 dark:text-gray-400">{deal.restaurant.phone}</span>
+                    <span className="text-gray-600 dark:text-gray-400 text-sm">{deal.restaurant.phone}</span>
                   </div>
                 )}
               </div>
             </div>
 
-            {/* Claim Deal Button */}
-            <div className="sticky bottom-0 bg-white dark:bg-gray-900 pt-4 border-t border-gray-200 dark:border-gray-700">
+            {/* Action Buttons */}
+            <div className="flex space-x-3 pt-4">
+              <button
+                onClick={handleGetDirections}
+                className="flex-1 bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 py-3 rounded-lg font-medium hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors flex items-center justify-center space-x-2"
+              >
+                <Navigation className="w-4 h-4" />
+                <span>Directions</span>
+              </button>
               <button
                 onClick={handleClaimDeal}
                 disabled={isClaimingDeal || !user}
-                className="w-full btn-primary py-4 text-lg font-semibold shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 bg-rose-500 text-white py-3 rounded-lg font-medium hover:bg-rose-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 {isClaimingDeal ? (
                   <div className="flex items-center justify-center space-x-2">
-                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                    <span>Claiming Deal...</span>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    <span>Claiming...</span>
                   </div>
                 ) : !user ? (
-                  'Sign in to Claim Deal'
+                  'Sign in to Claim'
                 ) : (
-                  'Claim Deal & Get Code'
+                  'Claim Deal'
                 )}
               </button>
             </div>
@@ -266,7 +277,7 @@ export const DealModal: React.FC<DealModalProps> = ({ deal, isOpen, onClose }) =
         </div>
       </div>
 
-      {/* QR Code Modal */}
+      {/* Claim Code Modal */}
       <ClaimCodeModal
         isOpen={showClaimModal}
         onClose={() => setShowClaimModal(false)}
