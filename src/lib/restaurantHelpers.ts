@@ -67,7 +67,7 @@ export const getRestaurantByOwner = async (ownerId: string) => {
     .from('restaurants')
     .select('*')
     .eq('owner_id', ownerId)
-    .single();
+    .maybeSingle();
     
   return { data, error };
 };
