@@ -61,23 +61,29 @@ function App() {
         },
         (error) => {
           console.error('Error getting location:', error);
-          let errorMessage = 'Unable to get your location. ';
           
           switch(error.code) {
             case error.PERMISSION_DENIED:
-              errorMessage += 'Please enable location permissions.';
+              // When permission is denied, show location selector
+              setIsOutsideDMV(true);
+              setUserLocation(null);
+              setLocationError(null);
               break;
             case error.POSITION_UNAVAILABLE:
-              errorMessage += 'Location information unavailable.';
+              setLocationError('Location information unavailable. Please select your area manually.');
+              setIsOutsideDMV(true);
+              setUserLocation(null);
               break;
             case error.TIMEOUT:
-              errorMessage += 'Location request timed out.';
+              setLocationError('Location request timed out. Please select your area manually.');
+              setIsOutsideDMV(true);
+              setUserLocation(null);
               break;
+            default:
+              setLocationError('Unable to get your location. Please select your area manually.');
+              setIsOutsideDMV(true);
+              setUserLocation(null);
           }
-          
-          setLocationError(errorMessage);
-          // Default to Washington DC
-          setUserLocation({ lat: 38.9072, lng: -77.0369 });
         },
         {
           enableHighAccuracy: true,
