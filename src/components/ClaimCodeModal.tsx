@@ -1,27 +1,23 @@
 import React, { useState, useEffect } from 'react';
-import { X, Download, Share2, Clock, CheckCircle, AlertCircle } from 'lucide-react';
-import { ClaimedDeal, generateQRCode, getClaimTimeRemaining } from '../lib/dealClaimHelpers';
+import { X, Copy, Clock, CheckCircle, AlertCircle, Share2, Sparkles } from 'lucide-react';
+import { ClaimedDeal, getClaimTimeRemaining } from '../lib/dealClaimHelpers';
 
-interface QRCodeModalProps {
+interface ClaimCodeModalProps {
   isOpen: boolean;
   onClose: () => void;
   claimedDeal: ClaimedDeal | null;
 }
 
-export const QRCodeModal: React.FC<QRCodeModalProps> = ({
+export const ClaimCodeModal: React.FC<ClaimCodeModalProps> = ({
   isOpen,
   onClose,
   claimedDeal
 }) => {
-  const [qrCodeUrl, setQrCodeUrl] = useState<string>('');
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [timeRemaining, setTimeRemaining] = useState<string>('');
+  const [copied, setCopied] = useState(false);
 
-  // Generate QR code when modal opens
   useEffect(() => {
     if (isOpen && claimedDeal) {
-      generateQRCodeImage();
       updateTimeRemaining();
       
       // Update time remaining every minute
@@ -30,38 +26,22 @@ export const QRCodeModal: React.FC<QRCodeModalProps> = ({
     }
   }, [isOpen, claimedDeal]);
 
-  const generateQRCodeImage = async () => {
-    if (!claimedDeal) return;
-    
-    setIsGenerating(true);
-    setError(null);
-    
-    try {
-      const qrUrl = await generateQRCode(claimedDeal.qr_data);
-      setQrCodeUrl(qrUrl);
-    } catch (err) {
-      console.error('Error generating QR code:', err);
-      setError('Failed to generate QR code');
-    } finally {
-      setIsGenerating(false);
-    }
-  };
-
   const updateTimeRemaining = () => {
     if (claimedDeal) {
       setTimeRemaining(getClaimTimeRemaining(claimedDeal.expires_at));
     }
   };
 
-  const handleDownload = () => {
-    if (!qrCodeUrl || !claimedDeal) return;
+  const handleCopyCode = async () => {
+    if (!claimedDeal) return;
     
-    const link = document.createElement('a');
-    link.href = qrCodeUrl;
-    link.download = `instantfork-deal-${claimedDeal.claim_code}.png`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    try {
+      await navigator.clipboard.writeText(claimedDeal.claim_code);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error('Failed to copy code:', err);
+    }
   };
 
   const handleShare = async () => {
@@ -69,7 +49,7 @@ export const QRCodeModal: React.FC<QRCodeModalProps> = ({
     
     const shareData = {
       title: 'InstantFork Deal Claimed',
-      text: `I claimed a deal: ${claimedDeal.qr_data.deal_title} at ${claimedDeal.qr_data.restaurant_name}`,
+      text: `I claimed a deal! Code: ${claimedDeal.claim_code}`,
       url: window.location.origin
     };
 
@@ -77,7 +57,6 @@ export const QRCodeModal: React.FC<QRCodeModalProps> = ({
       if (navigator.share) {
         await navigator.share(shareData);
       } else {
-        // Fallback: copy to clipboard
         await navigator.clipboard.writeText(
           `${shareData.text} - ${shareData.url}`
         );
@@ -98,7 +77,8 @@ export const QRCodeModal: React.FC<QRCodeModalProps> = ({
       <div className="bg-white dark:bg-gray-900 rounded-2xl w-full max-w-md max-h-[95vh] overflow-y-auto shadow-2xl border border-gray-200 dark:border-gray-700 animate-in fade-in-0 zoom-in-95 duration-300">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 flex items-center">
+            <Sparkles className="w-5 h-5 text-rose-500 mr-2" />
             Deal Claimed!
           </h2>
           <button
@@ -114,17 +94,17 @@ export const QRCodeModal: React.FC<QRCodeModalProps> = ({
           {/* Deal Info */}
           <div className="text-center">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
-              {claimedDeal.qr_data.deal_title}
+              {claimedDeal.deal_title || 'Deal Claimed'}
             </h3>
             <p className="text-gray-600 dark:text-gray-400 mb-2">
-              {claimedDeal.qr_data.restaurant_name}
+              {claimedDeal.restaurant_name || 'Restaurant'}
             </p>
             <div className="flex items-center justify-center space-x-2">
               <span className="text-2xl font-bold text-rose-500">
-                ${claimedDeal.qr_data.deal_price.toFixed(2)}
+                ${claimedDeal.deal_price?.toFixed(2) || '0.00'}
               </span>
               <span className="text-lg text-gray-500 line-through">
-                ${claimedDeal.qr_data.original_price.toFixed(2)}
+                ${claimedDeal.original_price?.toFixed(2) || '0.00'}
               </span>
             </div>
           </div>
@@ -155,45 +135,48 @@ export const QRCodeModal: React.FC<QRCodeModalProps> = ({
             )}
           </div>
 
-          {/* QR Code */}
-          <div className="flex justify-center">
-            <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
-              {isGenerating ? (
-                <div className="w-64 h-64 flex items-center justify-center">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-rose-500"></div>
-                </div>
-              ) : error ? (
-                <div className="w-64 h-64 flex items-center justify-center text-red-500">
-                  <div className="text-center">
-                    <AlertCircle className="w-8 h-8 mx-auto mb-2" />
-                    <p className="text-sm">{error}</p>
-                    <button
-                      onClick={generateQRCodeImage}
-                      className="mt-2 text-rose-500 hover:text-rose-600 text-sm underline"
-                    >
-                      Try Again
-                    </button>
-                  </div>
-                </div>
-              ) : qrCodeUrl ? (
-                <img
-                  src={qrCodeUrl}
-                  alt="Deal QR Code"
-                  className="w-64 h-64 object-contain"
-                />
-              ) : null}
+          {/* Claim Code Display */}
+          <div className="bg-gradient-to-br from-rose-50 to-pink-50 dark:from-rose-900/20 dark:to-pink-900/20 rounded-2xl p-6 text-center">
+            <h4 className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-3">
+              Your Claim Code
+            </h4>
+            <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border-2 border-dashed border-rose-300 dark:border-rose-700">
+              <div className="text-4xl font-bold text-gray-900 dark:text-gray-100 tracking-wider font-mono">
+                {claimedDeal.claim_code}
+              </div>
             </div>
+            <button
+              onClick={handleCopyCode}
+              className={`mt-4 flex items-center justify-center space-x-2 w-full py-2 px-4 rounded-lg transition-all ${
+                copied 
+                  ? 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400' 
+                  : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
+              }`}
+            >
+              {copied ? (
+                <>
+                  <CheckCircle className="w-4 h-4" />
+                  <span>Copied!</span>
+                </>
+              ) : (
+                <>
+                  <Copy className="w-4 h-4" />
+                  <span>Copy Code</span>
+                </>
+              )}
+            </button>
           </div>
 
           {/* Instructions */}
           <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
             <h4 className="font-medium text-blue-900 dark:text-blue-100 mb-2">
-              How to use this deal:
+              How to redeem at the restaurant:
             </h4>
             <ol className="text-sm text-blue-800 dark:text-blue-200 space-y-1">
-              <li>1. Show this QR code to the restaurant staff</li>
-              <li>2. They will scan it to verify your deal</li>
-              <li>3. Enjoy your discounted meal!</li>
+              <li>1. Tell the staff: "I have an InstantFork deal"</li>
+              <li>2. Give them your claim code: <span className="font-mono font-bold">{claimedDeal.claim_code}</span></li>
+              <li>3. They'll enter it in their system to verify</li>
+              <li>4. Enjoy your discounted meal!</li>
             </ol>
           </div>
 
@@ -220,21 +203,20 @@ export const QRCodeModal: React.FC<QRCodeModalProps> = ({
           </div>
 
           {/* Actions */}
-          {!isExpired && !isRedeemed && qrCodeUrl && (
+          {!isExpired && !isRedeemed && (
             <div className="flex space-x-3">
               <button
-                onClick={handleDownload}
-                className="flex-1 flex items-center justify-center space-x-2 py-3 px-4 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-              >
-                <Download className="w-4 h-4" />
-                <span>Download</span>
-              </button>
-              <button
                 onClick={handleShare}
-                className="flex-1 flex items-center justify-center space-x-2 py-3 px-4 bg-rose-500 text-white rounded-lg hover:bg-rose-600 transition-colors"
+                className="flex-1 flex items-center justify-center space-x-2 py-3 px-4 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
               >
                 <Share2 className="w-4 h-4" />
                 <span>Share</span>
+              </button>
+              <button
+                onClick={onClose}
+                className="flex-1 py-3 px-4 bg-rose-500 text-white rounded-lg hover:bg-rose-600 transition-colors"
+              >
+                Done
               </button>
             </div>
           )}

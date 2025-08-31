@@ -22,6 +22,7 @@ import { format } from 'date-fns';
 import { useAuthContext } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import { QRScanner } from '../components/QRScanner';
+import { ClaimCodeInput } from '../components/ClaimCodeInput';
 
 interface RestaurantDeal {
   id: string;
@@ -69,7 +70,7 @@ export function RestaurantDashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [showDealModal, setShowDealModal] = useState(false);
   const [editingDeal, setEditingDeal] = useState<RestaurantDeal | null>(null);
-  const [showQRScanner, setShowQRScanner] = useState(false);
+  const [showClaimInput, setShowClaimInput] = useState(false);
 
   useEffect(() => {
     if (!user) {
@@ -203,12 +204,12 @@ export function RestaurantDashboard() {
               </h2>
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
                 <button
-                  onClick={() => setShowQRScanner(true)}
+                  onClick={() => setShowClaimInput(true)}
                   className="flex items-center justify-center space-x-2 px-4 py-3 sm:py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors font-medium"
                 >
-                  <QrCode className="w-5 h-5" />
-                  <span className="hidden sm:inline">Scan QR Code</span>
-                  <span className="sm:hidden">Scan QR</span>
+                  <Hash className="w-5 h-5" />
+                  <span className="hidden sm:inline">Redeem Code</span>
+                  <span className="sm:hidden">Redeem</span>
                 </button>
                 <button
                   onClick={() => {
@@ -351,10 +352,10 @@ export function RestaurantDashboard() {
       )}
 
       {/* QR Scanner Modal */}
-      {showQRScanner && (
-        <QRScanner
-          isOpen={showQRScanner}
-          onClose={() => setShowQRScanner(false)}
+      {showClaimInput && (
+        <ClaimCodeInput
+          isOpen={showClaimInput}
+          onClose={() => setShowClaimInput(false)}
           restaurantId={profile?.id}
         />
       )}

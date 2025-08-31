@@ -11,15 +11,10 @@ export interface ClaimedDeal {
   redeemed_at?: string;
   expires_at: string;
   status: 'active' | 'redeemed' | 'expired';
-  qr_data: {
-    claim_code: string;
-    deal_title: string;
-    restaurant_name: string;
-    deal_price: number;
-    original_price: number;
-    expires_at: string;
-    claimed_at: string;
-  };
+  deal_title?: string;
+  restaurant_name?: string;
+  deal_price?: number;
+  original_price?: number;
 }
 
 export interface ClaimDealResponse {
@@ -28,7 +23,6 @@ export interface ClaimDealResponse {
   claimed_deal_id?: string;
   claim_code?: string;
   expires_at?: string;
-  qr_data?: ClaimedDeal['qr_data'];
 }
 
 export interface RedeemDealResponse {
@@ -76,16 +70,7 @@ export async function claimDeal(dealId: string): Promise<ClaimDealResponse> {
         success: true,
         claimed_deal_id: `mock-${Date.now()}`,
         claim_code: claimCode,
-        expires_at: expiresAt,
-        qr_data: {
-          claim_code: claimCode,
-          deal_title: 'Sample Deal',
-          restaurant_name: 'Sample Restaurant',
-          deal_price: 15.00,
-          original_price: 25.00,
-          expires_at: expiresAt,
-          claimed_at: new Date().toISOString()
-        }
+        expires_at: expiresAt
       };
     }
   } catch (error) {
@@ -130,40 +115,6 @@ export async function getUserClaimedDeals(): Promise<ClaimedDeal[]> {
   }
 }
 
-/**
- * Generate QR code data URL for a claimed deal
- */
-export async function generateQRCode(claimData: ClaimedDeal['qr_data']): Promise<string> {
-  try {
-    // Create QR code data with all necessary information
-    const qrData = JSON.stringify({
-      type: 'instantfork_deal_claim',
-      claim_code: claimData.claim_code,
-      deal_title: claimData.deal_title,
-      restaurant_name: claimData.restaurant_name,
-      deal_price: claimData.deal_price,
-      original_price: claimData.original_price,
-      expires_at: claimData.expires_at,
-      claimed_at: claimData.claimed_at
-    });
-
-    // Generate QR code as data URL
-    const qrCodeDataURL = await QRCode.toDataURL(qrData, {
-      width: 300,
-      margin: 2,
-      color: {
-        dark: '#000000',
-        light: '#FFFFFF'
-      },
-      errorCorrectionLevel: 'M'
-    });
-
-    return qrCodeDataURL;
-  } catch (error) {
-    console.error('Error generating QR code:', error);
-    throw new Error('Failed to generate QR code');
-  }
-}
 
 /**
  * Redeem a deal using claim code (for restaurants)
@@ -217,35 +168,6 @@ export async function getRestaurantClaimedDeals(restaurantId: string): Promise<C
   }
 }
 
-export interface QRCodeData {
-  type: 'instantfork_deal_claim';
-  claim_code: string;
-  deal_title: string;
-  restaurant_name: string;
-  deal_price: number;
-  original_price: number;
-  expires_at: string;
-  claimed_at: string;
-}
-
-/**
- * Parse QR code data
- */
-export function parseQRCodeData(qrData: string): QRCodeData {
-  try {
-    const parsed = JSON.parse(qrData);
-    
-    // Validate that it's an InstantFork deal claim
-    if (parsed.type !== 'instantfork_deal_claim' || !parsed.claim_code) {
-      throw new Error('Invalid QR code format');
-    }
-    
-    return parsed as QRCodeData;
-  } catch (error) {
-    console.error('Error parsing QR code data:', error);
-    throw new Error('Invalid QR code');
-  }
-}
 
 /**
  * Check if a deal claim is still valid

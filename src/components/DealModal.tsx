@@ -6,7 +6,7 @@ import { useStore } from '../store/useStore';
 import { useAuth } from '../contexts/AuthContext';
 import { addFavorite, removeFavorite } from '../lib/supabase';
 import { claimDeal, ClaimedDeal } from '../lib/dealClaimHelpers';
-import { QRCodeModal } from './QRCodeModal';
+import { ClaimCodeModal } from './ClaimCodeModal';
 
 interface DealModalProps {
   deal: Deal | null;
@@ -21,7 +21,7 @@ export const DealModal: React.FC<DealModalProps> = ({ deal, isOpen, onClose }) =
   const [isLoadingFavorite, setIsLoadingFavorite] = useState(false);
   const [isClaimingDeal, setIsClaimingDeal] = useState(false);
   const [claimedDeal, setClaimedDeal] = useState<ClaimedDeal | null>(null);
-  const [showQRModal, setShowQRModal] = useState(false);
+  const [showClaimModal, setShowClaimModal] = useState(false);
 
   if (!isOpen || !deal) return null;
 
@@ -59,7 +59,7 @@ export const DealModal: React.FC<DealModalProps> = ({ deal, isOpen, onClose }) =
     try {
       const result = await claimDeal(deal.id);
       
-      if (result.success && result.qr_data) {
+      if (result.success && result.claim_code) {
         const newClaimedDeal: ClaimedDeal = {
           id: result.claimed_deal_id || '',
           user_id: user.id,
@@ -69,11 +69,11 @@ export const DealModal: React.FC<DealModalProps> = ({ deal, isOpen, onClose }) =
           claimed_at: new Date().toISOString(),
           expires_at: result.expires_at || '',
           status: 'active',
-          qr_data: result.qr_data
+          claim_code: result.claim_code
         };
         
         setClaimedDeal(newClaimedDeal);
-        setShowQRModal(true);
+        setShowClaimModal(true);
       } else {
         alert(result.error || 'Failed to claim deal');
       }
@@ -258,7 +258,7 @@ export const DealModal: React.FC<DealModalProps> = ({ deal, isOpen, onClose }) =
                 ) : !user ? (
                   'Sign in to Claim Deal'
                 ) : (
-                  'Claim Deal & Get QR Code'
+                  'Claim Deal & Get Code'
                 )}
               </button>
             </div>
@@ -267,9 +267,9 @@ export const DealModal: React.FC<DealModalProps> = ({ deal, isOpen, onClose }) =
       </div>
 
       {/* QR Code Modal */}
-      <QRCodeModal
-        isOpen={showQRModal}
-        onClose={() => setShowQRModal(false)}
+      <ClaimCodeModal
+        isOpen={showClaimModal}
+        onClose={() => setShowClaimModal(false)}
         claimedDeal={claimedDeal}
       />
     </>

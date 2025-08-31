@@ -6,7 +6,7 @@ import { useStore } from '../store/useStore';
 import { useAuth } from '../contexts/AuthContext';
 import { addFavorite, removeFavorite, getUserFavorites } from '../lib/supabase';
 import { claimDeal, ClaimedDeal } from '../lib/dealClaimHelpers';
-import { QRCodeModal } from './QRCodeModal';
+import { ClaimCodeModal } from './ClaimCodeModal';
 
 interface DealCardProps {
   deal: Deal;
@@ -20,7 +20,7 @@ export const DealCard: React.FC<DealCardProps> = ({ deal, onClick }) => {
   const [isLoadingFavorite, setIsLoadingFavorite] = useState(false);
   const [isClaimingDeal, setIsClaimingDeal] = useState(false);
   const [claimedDeal, setClaimedDeal] = useState<ClaimedDeal | null>(null);
-  const [showQRModal, setShowQRModal] = useState(false);
+  const [showClaimModal, setShowClaimModal] = useState(false);
   
   const savings = calculateSavings(deal.original_price, deal.deal_price);
   const timeRemaining = getTimeRemaining(deal.end_time);
@@ -81,7 +81,7 @@ export const DealCard: React.FC<DealCardProps> = ({ deal, onClick }) => {
     try {
       const result = await claimDeal(deal.id);
       
-      if (result.success && result.qr_data) {
+      if (result.success && result.claim_code) {
         // Create a ClaimedDeal object for the modal
         const newClaimedDeal: ClaimedDeal = {
           id: result.claimed_deal_id || '',
@@ -92,11 +92,11 @@ export const DealCard: React.FC<DealCardProps> = ({ deal, onClick }) => {
           claimed_at: new Date().toISOString(),
           expires_at: result.expires_at || '',
           status: 'active',
-          qr_data: result.qr_data
+          claim_code: result.claim_code
         };
         
         setClaimedDeal(newClaimedDeal);
-        setShowQRModal(true);
+        setShowClaimModal(true);
       } else {
         alert(result.error || 'Failed to claim deal');
       }
@@ -248,9 +248,9 @@ export const DealCard: React.FC<DealCardProps> = ({ deal, onClick }) => {
       </div>
 
       {/* QR Code Modal */}
-      <QRCodeModal
-        isOpen={showQRModal}
-        onClose={() => setShowQRModal(false)}
+      <ClaimCodeModal
+        isOpen={showClaimModal}
+        onClose={() => setShowClaimModal(false)}
         claimedDeal={claimedDeal}
       />
     </div>
