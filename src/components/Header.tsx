@@ -321,7 +321,7 @@ export const Header: React.FC = () => {
                         await signOut();
                         setIsMobileMenuOpen(false);
                       }}
-                      className="flex-1 p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 glass-subtle rounded-xl transition-all duration-200"
+                      className="p-2.5 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 bg-gray-100 dark:bg-gray-800 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
                     >
                       <LogOut className="w-5 h-5 mx-auto" />
                     </button>
