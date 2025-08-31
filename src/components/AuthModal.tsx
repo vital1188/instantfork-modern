@@ -27,35 +27,60 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
 
     try {
       if (isSignUp) {
+        // Validate form data
+        if (!formData.email.trim() || !formData.password || !formData.fullName.trim()) {
+          setError('Please fill in all fields');
+          setLoading(false);
+          return;
+        }
+        
+        if (formData.password.length < 6) {
+          setError('Password must be at least 6 characters long');
+          setLoading(false);
+          return;
+        }
+        
         const { error } = await signUp(formData.email, formData.password, formData.fullName);
         if (error) {
           if (error.message.includes('not configured')) {
             setError(error.message);
+          } else if (error.message.includes('already registered')) {
+            setError('An account with this email already exists. Please sign in instead.');
           } else {
-            setError('Failed to create account. Please check your details and try again.');
+            setError(error.message || 'Failed to create account. Please check your details and try again.');
           }
         } else {
-          setError('Account created successfully! Please check your email to confirm your account.');
+          setError('Account created successfully! You can now sign in.');
           setTimeout(() => {
             setIsSignUp(false);
             setError(null);
           }, 3000);
         }
       } else {
+        // Validate form data
+        if (!formData.email.trim() || !formData.password) {
+          setError('Please enter both email and password');
+          setLoading(false);
+          return;
+        }
+        
         const { error } = await signIn(formData.email, formData.password);
         if (error) {
           if (error.message.includes('not configured')) {
             setError(error.message);
           } else if (error.message.includes('Invalid login credentials')) {
             setError('Invalid email or password. Please try again.');
+          } else if (error.message.includes('Email not confirmed')) {
+            setError('Please check your email and confirm your account before signing in.');
           } else {
-            setError('Failed to sign in. Please try again.');
+            setError(error.message || 'Failed to sign in. Please try again.');
           }
         } else {
           onClose();
         }
       }
     } catch (err) {
+      console.error('Auth error:', err);
       setError('An unexpected error occurred');
     } finally {
       setLoading(false);

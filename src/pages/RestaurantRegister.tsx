@@ -150,18 +150,41 @@ export function RestaurantRegister() {
     setError(null);
 
     try {
+      // Additional validation before submission
+      if (!formData.email.trim() || !formData.password || !formData.ownerName.trim()) {
+        setError('Please fill in all required fields');
+        setLoading(false);
+        return;
+      }
+      
+      if (formData.password.length < 6) {
+        setError('Password must be at least 6 characters long');
+        setLoading(false);
+        return;
+      }
+      
       // 1. Create user account
       const { error: signUpError } = await signUp(formData.email, formData.password, formData.ownerName);
       
       if (signUpError) {
-        throw new Error(signUpError.message || 'Failed to create account');
+        if (signUpError.message.includes('already registered')) {
+          setError('An account with this email already exists. Please sign in instead.');
+        } else if (signUpError.message.includes('not configured')) {
+          setError('Authentication is not properly configured. Please contact support.');
+        } else {
+          setError(signUpError.message || 'Failed to create account');
+        }
+        setLoading(false);
+        return;
       }
 
       // 2. Get the newly created user
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) {
-        throw new Error('Failed to get user after signup');
+        setError('Account created but failed to retrieve user information. Please try signing in.');
+        setLoading(false);
+        return;
       }
 
       // 3. Create restaurant profile using our helper function
@@ -178,15 +201,16 @@ export function RestaurantRegister() {
       });
 
       if (restaurantError) {
-        throw new Error(restaurantError.message || 'Failed to create restaurant profile');
+        setError(restaurantError.message || 'Failed to create restaurant profile');
+        setLoading(false);
+        return;
       }
 
       // Success! Navigate to dashboard
       navigate('/restaurant-dashboard');
     } catch (err) {
       console.error('Registration error:', err);
-      const errorMessage = err instanceof Error ? err.message : 'An error occurred during registration';
-      setError(errorMessage);
+      setError('An unexpected error occurred during registration');
     } finally {
       setIsLoading(false);
     }

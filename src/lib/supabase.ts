@@ -23,16 +23,28 @@ export const signUp = async (email: string, password: string, fullName: string) 
     };
   }
   
-  const { data, error } = await supabase.auth.signUp({
-    email,
-    password,
-    options: {
-      data: {
-        full_name: fullName,
+  try {
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          full_name: fullName,
+        },
+        emailRedirectTo: undefined, // Disable email confirmation
       },
-    },
-  });
-  return { data, error };
+    });
+    
+    if (error) {
+      console.error('Supabase signUp error:', error);
+      return { data: null, error };
+    }
+    
+    return { data, error: null };
+  } catch (err) {
+    console.error('SignUp exception:', err);
+    return { data: null, error: err };
+  }
 };
 
 export const signIn = async (email: string, password: string) => {
@@ -43,11 +55,22 @@ export const signIn = async (email: string, password: string) => {
     };
   }
   
-  const { data, error } = await supabase.auth.signInWithPassword({
-    email,
-    password,
-  });
-  return { data, error };
+  try {
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: email.trim(),
+      password,
+    });
+    
+    if (error) {
+      console.error('Supabase signIn error:', error);
+      return { data: null, error };
+    }
+    
+    return { data, error: null };
+  } catch (err) {
+    console.error('SignIn exception:', err);
+    return { data: null, error: err };
+  }
 };
 
 export const signOut = async () => {

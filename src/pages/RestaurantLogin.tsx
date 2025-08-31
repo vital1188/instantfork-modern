@@ -29,15 +29,22 @@ export function RestaurantLogin() {
       const { error: signInError } = await signIn(formData.email, formData.password);
       
       if (signInError) {
-        throw new Error(signInError.message || 'Failed to sign in');
+        if (signInError.message.includes('Invalid login credentials')) {
+          setError('Invalid email or password. Please check your credentials and try again.');
+        } else if (signInError.message.includes('not configured')) {
+          setError('Authentication is not properly configured. Please contact support.');
+        } else {
+          setError(signInError.message || 'Failed to sign in');
+        }
+        setLoading(false);
+        return;
       }
 
       // Success! Navigate to dashboard
       navigate('/restaurant-dashboard');
     } catch (err) {
       console.error('Login error:', err);
-      const errorMessage = err instanceof Error ? err.message : 'An error occurred during login';
-      setError(errorMessage);
+      setError('An unexpected error occurred during login');
     } finally {
       setIsLoading(false);
     }
