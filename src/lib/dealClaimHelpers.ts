@@ -1,6 +1,14 @@
 import { supabase } from './supabase';
 import QRCode from 'qrcode';
 
+/**
+ * Check if a string is a valid UUID
+ */
+function isValidUUID(str: string): boolean {
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(str);
+}
+
 export interface ClaimedDeal {
   id: string;
   user_id: string;
@@ -47,7 +55,21 @@ export async function claimDeal(dealId: string): Promise<ClaimDealResponse> {
       return { success: false, error: 'Please sign in to claim deals' };
     }
 
-    // Try to use the database function first
+    // Check if dealId is a valid UUID - if not, it's a mock deal
+    if (!isValidUUID(dealId)) {
+      // Mock implementation for demonstration
+      const claimCode = Math.random().toString(36).substring(2, 10).toUpperCase();
+      const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+      
+      return {
+        success: true,
+        claimed_deal_id: `mock-${Date.now()}`,
+        claim_code: claimCode,
+        expires_at: expiresAt
+      };
+    }
+
+    // Try to use the database function for real deals with valid UUIDs
     try {
       const { data, error } = await supabase.rpc('claim_deal', {
         p_deal_id: dealId,
