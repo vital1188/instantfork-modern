@@ -207,3 +207,40 @@ body {
   opacity: 0;
   transition: opacity 300ms;
 }
+
+/* Z-index hierarchy for proper layering */
+.z-header {
+  z-index: 40;
+}
+
+.z-modal {
+  z-index: 50;
+}
+
+.z-tooltip {
+  z-index: 60;
+}
+
+/* Prevent body scroll when modal is open */
+body.modal-open {
+  overflow: hidden;
+}
+
+/* Smooth scrolling for better UX */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Improved focus states for accessibility */
+*:focus-visible {
+  outline: 2px solid theme('colors.rose.500');
+  outline-offset: 2px;
+}
+
+/* Better mobile tap targets */
+@media (max-width: 640px) {
+  button, a {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}

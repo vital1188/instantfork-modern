@@ -46,13 +46,13 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({ isOpen, onClose }) => 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-end sm:items-center justify-center z-50">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center z-50" onClick={onClose}>
       <div className="bg-white w-full sm:max-w-md rounded-t-2xl sm:rounded-2xl max-h-[90vh] overflow-y-auto">
-        <div className="sticky top-0 bg-white p-4 border-b flex justify-between items-center">
-          <h2 className="text-xl font-bold">Filters</h2>
+        <div className="sticky top-0 bg-white dark:bg-gray-900 p-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center z-10">
+          <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">Filters</h2>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors text-gray-600 dark:text-gray-400"
           >
             <X className="w-5 h-5" />
           </button>
@@ -63,7 +63,7 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({ isOpen, onClose }) => 
           <div>
             <div className="flex items-center mb-3">
               <DollarSign className="w-5 h-5 mr-2 text-gray-600" />
-              <h3 className="font-semibold">Price Range</h3>
+              <h3 className="font-semibold text-gray-900 dark:text-gray-100">Price Range</h3>
             </div>
             <div className="space-y-2">
               <input
@@ -85,7 +85,7 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({ isOpen, onClose }) => 
           <div>
             <div className="flex items-center mb-3">
               <MapPin className="w-5 h-5 mr-2 text-gray-600" />
-              <h3 className="font-semibold">Distance</h3>
+              <h3 className="font-semibold text-gray-900 dark:text-gray-100">Distance</h3>
             </div>
             <div className="space-y-2">
               <input
@@ -108,7 +108,7 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({ isOpen, onClose }) => 
           <div>
             <div className="flex items-center mb-3">
               <Clock className="w-5 h-5 mr-2 text-gray-600" />
-              <h3 className="font-semibold">Time Left</h3>
+              <h3 className="font-semibold text-gray-900 dark:text-gray-100">Time Left</h3>
             </div>
             <div className="space-y-2">
               <input
@@ -130,7 +130,7 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({ isOpen, onClose }) => 
           <div>
             <div className="flex items-center mb-3">
               <Utensils className="w-5 h-5 mr-2 text-gray-600" />
-              <h3 className="font-semibold">Cuisine</h3>
+              <h3 className="font-semibold text-gray-900 dark:text-gray-100">Cuisine</h3>
             </div>
             <div className="flex flex-wrap gap-2">
               {cuisineOptions.map((cuisine) => (
@@ -170,16 +170,16 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({ isOpen, onClose }) => 
           </div>
         </div>
 
-        <div className="sticky bottom-0 bg-white p-4 border-t flex space-x-3">
+        <div className="sticky bottom-0 bg-white dark:bg-gray-900 p-4 border-t border-gray-200 dark:border-gray-700 flex space-x-3 z-10">
           <button
             onClick={handleReset}
-            className="flex-1 py-2 border border-gray-300 rounded-lg font-semibold hover:bg-gray-50 transition-colors"
+            className="flex-1 py-2 border border-gray-300 dark:border-gray-600 rounded-lg font-semibold text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
           >
             Reset
           </button>
           <button
             onClick={onClose}
-            className="flex-1 py-2 bg-red-500 text-white rounded-lg font-semibold hover:bg-red-600 transition-colors"
+            className="flex-1 py-2 bg-rose-500 text-white rounded-lg font-semibold hover:bg-rose-600 transition-colors shadow-lg"
           >
             Apply Filters
           </button>
