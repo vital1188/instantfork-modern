@@ -153,13 +153,13 @@ export function RestaurantRegister() {
       // Additional validation before submission
       if (!formData.email.trim() || !formData.password || !formData.ownerName.trim()) {
         setError('Please fill in all required fields');
-        setLoading(false);
+        setIsLoading(false);
         return;
       }
-      
+
       if (formData.password.length < 6) {
         setError('Password must be at least 6 characters long');
-        setLoading(false);
+        setIsLoading(false);
         return;
       }
       
@@ -174,7 +174,7 @@ export function RestaurantRegister() {
         } else {
           setError(signUpError.message || 'Failed to create account');
         }
-        setLoading(false);
+        setIsLoading(false);
         return;
       }
 
@@ -183,7 +183,7 @@ export function RestaurantRegister() {
       
       if (!user) {
         setError('Account created but failed to retrieve user information. Please try signing in.');
-        setLoading(false);
+        setIsLoading(false);
         return;
       }
 
@@ -191,24 +191,14 @@ export function RestaurantRegister() {
       const { error: restaurantError } = await createRestaurant({
         owner_id: user.id,
         name: formData.restaurantName,
+        owner_name: formData.ownerName,
         description: formData.description,
         category: formData.category,
         address: `${formData.address}, ${formData.city}, ${formData.state} ${formData.zipCode}`,
         phone: formData.phone,
-        email: formData.email,
         website: formData.website,
         location: formData.coordinates
       });
-
-      if (restaurantError) {
-        setError(restaurantError.message || 'Failed to create restaurant profile');
-        setLoading(false);
-        return;
-      }
-
-      // Success! Navigate to dashboard
-      navigate('/restaurant-dashboard');
-    } catch (err) {
       console.error('Registration error:', err);
       setError('An unexpected error occurred during registration');
     } finally {
