@@ -244,3 +244,24 @@ html {
     min-width: 44px;
   }
 }
+/*
+ * Z-INDEX HIERARCHY DOCUMENTATION
+ * ================================
+ * To prevent overlapping and ensure proper layering:
+ *
+ * z-0:  Background gradients and decorative elements
+ * z-10: Page content, sticky elements within modals
+ * z-30: Floating action buttons (HungryNowButton)
+ * z-40: Header (sticky navigation)
+ * z-50: Standard modals (DealModal, FilterPanel, LocationModal, etc.)
+ * z-60: Secondary modals that appear on top of primary modals
+ * z-70: Tertiary modals (ClaimCodeModal) - highest priority
+ * z-999: Map overlays (must be below header)
+ * z-[1000]: Map controls and specific map elements
+ *
+ * RULES:
+ * 1. Always use click-outside-to-close for modal backdrops
+ * 2. Use e.stopPropagation() on modal content to prevent backdrop clicks
+ * 3. Never exceed z-70 unless absolutely necessary
+ * 4. Document any exceptions to this hierarchy
+ */
