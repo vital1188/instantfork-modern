@@ -21,12 +21,10 @@ interface RestaurantDeal {
 // Fetch all active deals from restaurants
 export const fetchRestaurantDeals = async () => {
   console.log('Fetching restaurant deals from Supabase...');
-  
+
   const { data, error } = await supabase
     .from('deals_with_restaurants')
     .select('*')
-    .gte('end_time', new Date().toISOString())
-    .eq('active', true)
     .order('created_at', { ascending: false });
 
   if (error) {
@@ -36,39 +34,53 @@ export const fetchRestaurantDeals = async () => {
 
   console.log('Raw restaurant deals from Supabase:', data);
 
+  if (!data || data.length === 0) {
+    console.log('No deals found in database');
+    return [];
+  }
+
   // Transform the data to match the format expected by the app
-  const transformedDeals = (data as RestaurantDeal[]).map(deal => ({
-    id: deal.id,
-    restaurant_id: deal.id, // Use deal ID as restaurant_id for now
-    title: deal.title,
-    description: deal.description,
-    image_url: deal.image_url || '/api/placeholder/400/300',
-    original_price: deal.original_price,
-    deal_price: deal.deal_price,
-    discount_percentage: Math.round(((deal.original_price - deal.deal_price) / deal.original_price) * 100),
-    start_time: new Date(deal.start_time),
-    end_time: new Date(deal.end_time),
-    location: deal.restaurant_location,
-    tags: deal.tags || [],
-    active: true, // Only fetching active deals
-    created_at: new Date(), // Use current date as created_at
-    restaurant: {
+  const transformedDeals = data.map((deal: any) => {
+    const location = typeof deal.restaurant_location === 'string'
+      ? JSON.parse(deal.restaurant_location)
+      : deal.restaurant_location;
+
+    return {
       id: deal.id,
-      name: deal.restaurant_name,
+      restaurant_id: deal.restaurant_id,
+      title: deal.title,
+      description: deal.description,
+      image_url: deal.image_url || 'https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg',
+      original_price: parseFloat(deal.original_price),
+      deal_price: parseFloat(deal.deal_price),
+      discount_percentage: parseInt(deal.discount),
+      start_time: new Date(deal.start_time),
+      end_time: new Date(deal.end_time),
       location: {
-        lat: deal.restaurant_location.lat,
-        lng: deal.restaurant_location.lng,
-        address: deal.restaurant_address
+        lat: location.lat,
+        lng: location.lng
       },
-      description: '',
-      category: deal.restaurant_category,
-      rating: 4.5, // Default rating
-      website: '',
-      logo: deal.image_url || '/api/placeholder/400/300',
-      phone: ''
-    }
-  }));
-  
+      tags: deal.tags || [],
+      active: deal.is_active,
+      created_at: new Date(deal.created_at),
+      restaurant: {
+        id: deal.restaurant_id,
+        name: deal.restaurant_name,
+        location: {
+          lat: location.lat,
+          lng: location.lng,
+          address: location.address || ''
+        },
+        description: '',
+        category: deal.restaurant_category,
+        rating: 4.5,
+        website: deal.restaurant_website || '',
+        logo: deal.image_url || 'https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg',
+        phone: deal.restaurant_phone || ''
+      }
+    };
+  });
+
   console.log('Transformed restaurant deals:', transformedDeals);
   return transformedDeals;
 };
